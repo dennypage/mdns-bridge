@@ -1,0 +1,79 @@
+#
+# Example mdns-bridge configuration file
+#
+# For detailed descriptions on configuration options, please see the README.
+#
+
+#
+# The global section is mandatory and must be the first section in the
+# configuration. The global section must provide the list of interfaces,
+# while all other parameters are optional.
+#
+# The global section may provide a list of inbound filters that are applied
+# to all interfaces. Either an allow list may be provided, or a deny list,
+# but not both. If provided, the global filter is applied immediately upon
+# receipt of packets from any interface prior to processing of any interface
+# specific filters.
+#
+# An allow list is a comma separated list of filters defining names that may
+# be shared across interfaces. If an allow list is defined, any names that
+# do not match one of the filters in the list will be discarded from incoming
+# packets.
+#
+# A deny list is a comma separated list of filters defining names that may
+# not be shared by any interface. Any names that match one of the filters in
+# the list will be discarded from incoming packets.
+#
+# The default behavior is to allow all names.
+#
+[global]
+  # The list of interfaces (mandatory).
+  interfaces = ix0, igc0, igc1
+
+  # Optionally disable ipv4 on all interfaces.
+  disable-ipv4 = no
+
+  # Optionally disable ipv6 on all interfaces.
+  disable-ipv6 = no
+
+  # An optional comma separated list of filters to globally allow
+  #allow-inbound-filters = _ipp, _ipps, _airplay, _ssh, _https
+
+  # An optional comma separated list of filters to globally deny
+  #deny-inbound-filters = _ssh, _http
+
+
+#
+# Interface sections are optional, and may be in any order. All parameters
+# within an interface section are optional.
+#
+# An interface section may provide interface specific lists of allow/deny
+# filters, for inbound and outbound packets on the interface. Interface
+# specific filters are always applied after any global filters.
+#
+# Similar to global filter lists, for a given packet direction, inbound or
+# outbound, either an allow list may be provided, or a deny list, but not
+# both.
+#
+# The default behavior is to allow all names inbound and outbound.
+#
+[ix0]
+  # An optional comma separated list of filters to allow
+  #allow-inbound-filters = _airplay
+
+  # An optional comma separated list of outbound filters to allow
+  #allow-outbound-filters = _ssh, _https
+
+  # An optional comma separated list of outbound filters to deny
+  #deny-outbound-filters = _ssh
+
+[igc0]
+  # Optionally Disable ipv4.
+  #disable-ipv4 = no
+
+  # Optionally Disable ipv6.
+  #disable-ipv6 = no
+
+[igc1]
+  # Optionally Disable ipv6.
+  #disable-ipv6 = yes
