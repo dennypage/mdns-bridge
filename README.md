@@ -112,7 +112,7 @@ configured interface.
 The global section is required, and must be the first section in the
 configuration file.
 
-#### Here is a example global section:
+#### Example global section:
 
 ```
 [global]
@@ -173,7 +173,7 @@ configuration file.
 Interface sections are optional and may be in any order. All parameters in
 an interface section are optional.
 
-#### Here is a example interface section:
+#### Example interface section:
 
 ```
 [ix0]
@@ -214,10 +214,10 @@ an interface section are optional.
 * The parameter to enable or disable IPv4/IPv6 cannot override the global
     setting. I.E. if the global setting is `disable-ipv6 = yes`, an
     interface may not specify `disable-ipv4 = no`.
-* Only one inbound filter list may be provided. Either an allow list, or a
-    deny list, but not both.
-* Only one outbound filter list may be provided. Either an allow list, or
-    a deny list, but not both.
+* Only one inbound filter list may be provided per interface. Either an
+    allow list, or a deny list, but not both.
+* Only one outbound filter list may be provided per interface. Either an
+    allow list, or a deny list, but not both.
 * Inbound interface filters are applied following the global filters. An
     inbound interface filter does not override the global filter list.
 * Outbound interface filters are applied prior to sending packets to the
