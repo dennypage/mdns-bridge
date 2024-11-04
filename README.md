@@ -224,10 +224,9 @@ an interface section are optional.
     interface.
 * The default behavior is to allow all names inbound and outbound.
 
-
 ---
 
-## Technical detail
+## Technical information
 
 ### Supported mDNS types
 The following mDNS types are supported by mdns-bridge:
@@ -263,5 +262,5 @@ dropped with a warning if found in mDNS packets:
 | PX      |  26  | No longer used            |
 | KX      |  36  | Key exchange              |
 
-If anyone knows of an existing use for any of these types, please
-create an issue describing the use case.
+**If anyone encounters an existing use case for an unsupported mDNS
+type, please create an issue describing the situation.**
