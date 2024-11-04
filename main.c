@@ -160,12 +160,11 @@ static void parse_args(
 //
 // Create pid file
 //
-static void create_pidfile(void)
+static int create_pidfile(void)
 {
     int                         pidfile_fd = -1;
     char                        pidbuf[64];
     pid_t                       pid;
-    ssize_t                     len;
     ssize_t                     rs;
     int                         r;
 
@@ -223,6 +222,21 @@ static void create_pidfile(void)
         }
     }
 
+    return pidfile_fd;
+}
+
+
+//
+// Write pid file
+//
+static void write_pidfile(
+    int                         pidfile_fd)
+{
+    char                        pidbuf[64];
+    ssize_t                     len;
+    ssize_t                     rs;
+    int                         r;
+
     len = snprintf(pidbuf, sizeof(pidbuf), "%u\n", (unsigned) getpid());
     if (len < 0 || (size_t) len > sizeof(pidbuf))
     {
@@ -250,8 +264,9 @@ int main(
     int                         argc,
     char                        *argv[])
 {
+    int                         pidfile_fd = -1;
     pid_t                       pid;
-    struct                      sigaction act;
+    struct sigaction            act;
 
     // Handle command line args
     parse_args(argc, argv);
@@ -283,7 +298,7 @@ int main(
     // Create pid file if requested
     if (pidfile_name)
     {
-        create_pidfile();
+        pidfile_fd = create_pidfile();
     }
 
     // Self background
@@ -302,6 +317,12 @@ int main(
         }
 
         (void) setsid();
+    }
+
+    // Write pid file if requested
+    if (pidfile_fd != -1)
+    {
+        write_pidfile(pidfile_fd);
     }
 
     // Start the bridge(s)
