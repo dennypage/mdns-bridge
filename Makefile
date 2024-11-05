@@ -1,7 +1,5 @@
-#CC=gcc
-CC=clang
-
-CFLAGS=-Wall -Wextra -g -O2
+#CC=clang
+#CFLAGS=-Wall -Wextra -g -O2
 
 all: mdns-bridge
 
@@ -12,7 +10,7 @@ $(all_objects): common.h
 $(dns_objects): dns.h
 
 mdns-bridge: $(all_objects)
-	${CC} -o mdns-bridge -pthread $(all_objects)
+	$(CC) -o mdns-bridge -pthread $(all_objects)
 
 .PHONY: clean
 clean:
