@@ -213,7 +213,7 @@ an interface section are optional.
 ##### Notes:
 * The parameter to enable or disable IPv4/IPv6 cannot override the global
     setting. I.E. if the global setting is `disable-ipv6 = yes`, an
-    interface may not specify `disable-ipv4 = no`.
+    interface may not specify `disable-ipv6 = no`.
 * Only one inbound filter list may be provided per interface. Either an
     allow list, or a deny list, but not both.
 * Only one outbound filter list may be provided per interface. Either an
