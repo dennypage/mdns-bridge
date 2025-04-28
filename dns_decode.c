@@ -567,9 +567,47 @@ static unsigned int dns_decode_rrs(
                 allowed = allowed_inbound(interface, &rr->rdata_name);
                 break;
 
-            // These resource types are not filtered
             case DNS_TYPE_A:
+                // Sanity check
+                if (data_len < sizeof(struct in_addr))
+                {
+                    // Drop the packet
+                    dns_packet_error(packet, "invalid A record length in %s record", rr_section_name[section_type]);
+                    return 0;
+                }
+
+                // Skip link local addresses
+                if ((((struct in_addr *) (packet->buffer + packet_offset))->s_addr & 0xffff0000) == 0xa9fe0000)
+                {
+                    allowed = 0;
+                }
+                else
+                {
+                    allowed = 1;
+                }
+                break;
+
             case DNS_TYPE_AAAA:
+                // Sanity check
+                if (data_len < sizeof(struct in6_addr))
+                {
+                    // Drop the packet
+                    dns_packet_error(packet, "invalid AAAA record length in %s record", rr_section_name[section_type]);
+                    return 0;
+                }
+
+                // Skip link local addresses
+                if (IN6_IS_ADDR_LINKLOCAL((struct in6_addr *) (packet->buffer + packet_offset)))
+                {
+                    allowed = 0;
+                }
+                else
+                {
+                    allowed = 1;
+                }
+                break;
+
+            // These resource types are not filtered
             case DNS_TYPE_OPT:
             case DNS_TYPE_NSEC:
                 allowed = 1;
