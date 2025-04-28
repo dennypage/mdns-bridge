@@ -37,7 +37,7 @@
 
 
 // Version number of mdns-bridge
-#define VERSION                 "1.0.0"
+#define VERSION                 "2.0.0"
 
 
 // Maximum packet size for mDNS per RFC 6762, section 18. Note that this
