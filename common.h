@@ -1,6 +1,6 @@
 
 //
-// Copyright (c) 2024, Denny Page
+// Copyright (c) 2025, Denny Page
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -57,10 +57,10 @@
 // Socket address and packet structures
 typedef union
 {
-    struct sockaddr_in      sin;
-    struct sockaddr_in6     sin6;
-    struct sockaddr_storage storage;
-    struct sockaddr         sa;
+    struct sockaddr_in          sin;
+    struct sockaddr_in6         sin6;
+    struct sockaddr_storage     storage;
+    struct sockaddr             sa;
 } socket_address_t;
 
 typedef struct
