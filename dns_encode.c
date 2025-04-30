@@ -379,7 +379,7 @@ static unsigned int dns_encode_name(
 
 
 //
-// Encode queries
+// Encode queries with outbound filtering
 //
 static unsigned int dns_encode_queries(
     _dns_state_t *              state,
@@ -437,7 +437,7 @@ static unsigned int dns_encode_queries(
 
 
 //
-// Encode a DNS packet with outbound filtering
+// Encode resource records with outbound filtering
 //
 static unsigned int dns_encode_rrs(
     _dns_state_t *              state,
