@@ -231,22 +231,24 @@ an interface section are optional.
 ### Supported mDNS types
 The following mDNS types are supported by mdns-bridge:
 
-| Type    |  ID  | Description               | Filtering           |
-| :------ | ---: | :------------------------ | :------------------ |
-| A       |   1  | IPv4 address              | Not filtered        |
-| CNAME   |   5  | Name alias                | Target name         |
-| PTR     |  12  | Pointer to a name         | Target name         |
-| HINFO   |  13  | Host information          | Owner domain name   |
-| TXT     |  16  | Text records              | Owner domain name   |
-| AAAA    |  28  | IPv6 address              | Not filtered        |
-| SRV     |  33  | Service location          | Owner domain name   |
-| DNAME   |  39  | Domain alias              | Target name         |
-| OPT     |  41  | EDNS indicator            | Not filtered        |
-| NSEC    |  47  | Nonexistence indicator    | Not filtered        |
-| SVCB    |  64  | Service binding           | Owner domain name   |
-| HTTPS   |  65  | Service binding (https)   | Owner domain name   |
-| ANY     | 255  | All record types request  | Not filtered        |
+| Type    |  ID  | Description               | Filtering                        |
+| :------ | ---: | :------------------------ | :------------------------------- |
+| A       |   1  | IPv4 address              | Link local addresses<sup>*</sup> |
+| CNAME   |   5  | Name alias                | Target name                      |
+| PTR     |  12  | Pointer to a name         | Target name                      |
+| HINFO   |  13  | Host information          | Owner domain name                |
+| TXT     |  16  | Text records              | Owner domain name                |
+| AAAA    |  28  | IPv6 address              | Link local addresses<sup>*</sup> |
+| SRV     |  33  | Service location          | Owner domain name                |
+| DNAME   |  39  | Domain alias              | Target name                      |
+| OPT     |  41  | EDNS indicator            | Not filtered                     |
+| NSEC    |  47  | Nonexistence indicator    | Not filtered                     |
+| SVCB    |  64  | Service binding           | Owner domain name                |
+| HTTPS   |  65  | Service binding (https)   | Owner domain name                |
+| ANY     | 255  | All record types request  | Not filtered                     |
 
+<sup>*</sup> A and AAAA records are not filtered by name, but link local addresses are never forwarded.
+  
 ### Unsupported mDNS types
 The following mDNS types are not supported by mdns-bridge, and will be
 dropped with a warning if found in mDNS packets:
