@@ -532,10 +532,10 @@ static unsigned int dns_decode_rrs(
         data_len = ntohs(rr->data->rdata_len);
 
         // Sanity check
-        if (data_len == 0 || packet_offset + data_len > packet->bytes)
+        if (packet_offset + data_len > packet->bytes)
         {
             // Drop the packet
-            dns_packet_error(packet, "invalid rdata length in %s record", rr_section_name[section_type]);
+            dns_packet_error(packet, "rdata overrun in %s record", rr_section_name[section_type]);
             return 0;
         }
 
@@ -556,6 +556,15 @@ static unsigned int dns_decode_rrs(
             case DNS_TYPE_PTR:
             case DNS_TYPE_CNAME:
             case DNS_TYPE_DNAME:
+                // Sanity check
+                if (data_len == 0)
+                {
+                    // Drop the packet
+                    dns_packet_error(packet, "empty rdata name in %s record", rr_section_name[section_type]);
+                    return 0;
+                }
+
+                // Decode the rdata name
                 tmp_offset = dns_decode_name(packet, packet_offset, &rr->rdata_name);
                 if (tmp_offset != packet_offset + data_len)
                 {
