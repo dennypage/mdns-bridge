@@ -51,7 +51,7 @@
 #define KEY_DISABLE_IPV4                "disable-ipv4"
 #define KEY_DISABLE_IPV6                "disable-ipv6"
 
-// Keys specific tointerface sections
+// Keys specific to interface sections
 #define KEY_ALLOW_INBOUND_FILTERS     	"allow-inbound-filters"
 #define KEY_DENY_INBOUND_FILTERS      	"deny-inbound-filters"
 #define KEY_ALLOW_OUTBOUND_FILTERS    	"allow-outbound-filters"
