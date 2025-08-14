@@ -379,7 +379,7 @@ void read_config(void)
         // Ignore leading whitespace
         line = trim_leading_whitespace(line + 1);
 
-        // Ensure the section name (interface name)is terminated
+        // Ensure the section name (interface name) is terminated
         offset = strlen(line) - 1;
         if (line[offset] != ']')
         {
