@@ -469,7 +469,7 @@ static unsigned int dns_decode_queries(
             default:
                 dns_packet_error(packet, "unsupported query type %d (dropped)", query->type);
                 dns_labels_to_string(query->name.labels, query->name.length, string);
-                logger("(name %s)\n", query->name.labels);
+                logger("(name %s)\n", string);
                 allowed = 0;
         }
 
@@ -626,7 +626,7 @@ static unsigned int dns_decode_rrs(
             default:
                 dns_packet_error(packet, "unsupported type %d in %s record (dropped)", rr->type, rr_section_name[section_type]);
                 dns_labels_to_string(rr->name.labels, rr->name.length, string);
-                logger("(name %s, data len %u)\n", rr->name.labels, data_len);
+                logger("(name %s, data len %u)\n", string, data_len);
                 allowed = 0;
                 break;
         }
