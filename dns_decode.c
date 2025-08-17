@@ -269,6 +269,7 @@ static unsigned int dns_decode_name(
             // Bounds check on the pointer -- must be after the dns header and before the current label
             if (pointer < sizeof(dns_header_t) || pointer >= label_offset)
             {
+                // Drop the packet
                 dns_packet_error(packet, "bad label pointer in a name");
                 return 0;
             }
@@ -292,6 +293,7 @@ static unsigned int dns_decode_name(
         label_count += 1;
         if (label_count > MAX_NUM_LABELS)
         {
+            // Drop the packet
             dns_packet_error(packet, "too many labels in a name");
             return 0;
         }
@@ -316,6 +318,7 @@ static unsigned int dns_decode_name(
         copy_len = label_len + 1;
         if (label_offset + copy_len + 1 > packet->bytes || name_offset + copy_len + 1 > sizeof(name->labels))
         {
+            // Drop the packet
             dns_packet_error(packet, "name overrun");
             return 0;
         }
@@ -346,6 +349,7 @@ static unsigned int dns_decode_header(
 
     if (packet->bytes < sizeof(dns_header_t))
     {
+        // Drop the packet
         dns_packet_error(packet, "dns_decode_header: packet too small");
         return 0;
     }
@@ -363,6 +367,7 @@ static unsigned int dns_decode_header(
         // Sanity check
         if (state->recv_query_count > MAX_QUERY_COUNT)
         {
+            // Drop the packet
             dns_packet_error(packet, "too many queries (%u)", state->recv_query_count);
             return 0;
         }
@@ -370,6 +375,7 @@ static unsigned int dns_decode_header(
         np = realloc(state->query_list, state->recv_query_count * sizeof(dns_query_t));
         if (np == NULL)
         {
+            // Drop the packet
             logger("Cannot allocate memory: %s\n", strerror(errno));
             return 0;
         }
@@ -384,16 +390,16 @@ static unsigned int dns_decode_header(
         // Sanity check
         if (total_rr_count > MAX_RESOURCE_COUNT)
         {
-            dns_packet_error(packet, "too many resource records (%u)", total_rr_count);
             // Drop the packet
+            dns_packet_error(packet, "too many resource records (%u)", total_rr_count);
             return 0;
         }
 
         np = realloc(state->rr_list, total_rr_count * sizeof(dns_rr_t));
         if (np == NULL)
         {
-            logger("Cannot allocate memory: %s\n", strerror(errno));
             // Drop the packet
+            logger("Cannot allocate memory: %s\n", strerror(errno));
             return 0;
         }
         state->rr_list = np;
@@ -703,19 +709,34 @@ unsigned int dns_decode_packet(
 
     // Decode the header
     packet_offset = dns_decode_header(state, packet);
+    if (packet_offset == 0)
+    {
+        // Drop the packet
+        return 0;
+    }
 
     // Decode the queries
-    if (packet_offset && state->recv_query_count)
+    if (state->recv_query_count)
     {
         packet_offset = dns_decode_queries(state, state->recv_query_count, interface, packet, packet_offset);
+        if (packet_offset == 0)
+        {
+            // Drop the packet
+            return 0;
+        }
     }
 
     // Decode resource record sections (answer, authority, additional)
     for (rr_section_type = 0; rr_section_type < NUM_RR_SECTION_TYPES; rr_section_type++)
     {
-        if (packet_offset && state->recv_rr_count[rr_section_type])
+        if (state->recv_rr_count[rr_section_type])
         {
             packet_offset = dns_decode_rrs(state, rr_section_type, state->recv_rr_count[rr_section_type], interface, packet, packet_offset);
+            if (packet_offset == 0)
+            {
+                // Drop the packet
+                return 0;
+            }
         }
     }
 
