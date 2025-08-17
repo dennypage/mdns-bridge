@@ -59,9 +59,6 @@ struct sockaddr_in6             ipv6_any_sockaddr;
 struct sockaddr_in6             ipv6_mcast_sockaddr;
 
 
-// Determine if an interface is up and support multicast
-#define IFF_VALID_INTERFACE(flags) (((flags) & IFF_UP) && ((flags) & IFF_MULTICAST))
-
 // Determine if an address is an IPv4 Link Local address (169.254/16)
 #define MDB_ADDR_IS_IPV4_LL(addr) ((ntohl(addr) & 0xffff0000) == 0xa9fe0000)
 
@@ -132,9 +129,13 @@ void os_validate_interfaces(void)
                 if (sa)
                 {
                     // Confirm the interface is up and supports multicast
-                    if (!IFF_VALID_INTERFACE(ifaddr_ptr->ifa_flags))
+                    if ((ifaddr_ptr->ifa_flags & IFF_UP) == 0)
                     {
-                        fatal("Interface \"%s\" is not up or does not support multicast\n", interface->name);
+                        logger("Interface \"%s\" is not up\n", interface->name);
+                    }
+                    if ((ifaddr_ptr->ifa_flags & IFF_MULTICAST) == 0)
+                    {
+                        logger("Interface \"%s\" does not support multicast\n", interface->name);
                     }
 
                     // Check the IPv4 and IPv6 addresses
