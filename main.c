@@ -48,6 +48,7 @@ static const char *             progname;
 // Command line flags
 static unsigned int             foreground = 0;
 static unsigned int             flag_syslog = 0;
+unsigned int                    flag_warn = 0;
 
 // Process ID file
 static const char *             pidfile_name = NULL;
@@ -126,7 +127,7 @@ static void parse_args(
 
     progname = argv[0];
 
-    while((opt = getopt(argc, argv, "hfsc:p:")) != -1)
+    while((opt = getopt(argc, argv, "hfswc:p:")) != -1)
     {
         switch (opt)
         {
@@ -135,6 +136,9 @@ static void parse_args(
             break;
         case 's':
             flag_syslog = 1;
+            break;
+        case 'w':
+            flag_warn = 1;
             break;
         case 'c':
             config_filename = optarg;
@@ -149,6 +153,7 @@ static void parse_args(
             fprintf(stderr, "    -h display usage\n");
             fprintf(stderr, "    -f run in foreground\n");
             fprintf(stderr, "    -s log notifications via syslog\n");
+            fprintf(stderr, "    -w warn for unsupported dns types\n");
             fprintf(stderr, "    -c configuration file name\n");
             fprintf(stderr, "    -p process id file name\n");
             exit(1);

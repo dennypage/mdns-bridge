@@ -12,11 +12,12 @@ both IPv4 and IPv6.**
 The command line usage for mdns-bridge is:
 
 ```
-mdns-bridge [-h] [-f] [-s] [-c config_file] [-p pid_file]
+mdns-bridge [-h] [-f] [-s] [-w] [-c config_file] [-p pid_file]
 
     -h                  Display usage
     -f                  Run in the foreground           (default is to self-background)
     -s                  Log notifications via syslog    (default is stderr)
+    -w                  Warn for unsupported dns types
     -c config_file      Configuration file to use       (default is mdns-bridge.conf)
     -p pid_file         Process ID filename             (default is no pid file)
 ```
@@ -251,7 +252,7 @@ The following mDNS types are supported by mdns-bridge:
   
 ### Unsupported mDNS types
 The following mDNS types are not supported by mdns-bridge, and will be
-dropped with a warning if found in mDNS packets:
+dropped if found in mDNS packets:
 
 | Type    |  ID  | Description               |
 | :------ | ---: | :------------------------ |
@@ -264,5 +265,8 @@ dropped with a warning if found in mDNS packets:
 | PX      |  26  | No longer used            |
 | KX      |  36  | Key exchange              |
 
-**If anyone encounters an existing use case for an unsupported mDNS
+There is an option (-w) that can be used to enable a warning message
+whenever an unsupported type is encountered.
+
+**If anyone encounters a valid use case for an unsupported mDNS
 type, please create an issue describing the situation.**

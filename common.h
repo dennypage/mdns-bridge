@@ -153,6 +153,9 @@ typedef void *                  dns_state_t;
 // Configuration filename, defined in main.c
 extern const char *             config_filename;
 
+// Warn about dns issues, defined in main.c
+extern unsigned int             flag_warn;
+
 // Socket addresses, defined in socket.c
 extern struct sockaddr_in       ipv4_any_sockaddr;
 extern struct sockaddr_in       ipv4_mcast_sockaddr;
