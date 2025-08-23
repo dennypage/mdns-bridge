@@ -364,7 +364,7 @@ static unsigned int dns_decode_header(
         // Drop the packet
         if (flag_warn)
         {
-            dns_packet_error(packet, "packet from a non mDNS source port (%u)", port);
+            dns_packet_error(packet, "non mDNS source port (%u)", port);
         }
         return 0;
     }
@@ -375,7 +375,7 @@ static unsigned int dns_decode_header(
         // Drop the packet
         if (flag_warn)
         {
-            dns_packet_error(packet, "packet length (%u) too short to contain an mDNS header", packet->bytes);
+            dns_packet_error(packet, length (%u) too short to contain an mDNS header", packet->bytes);
         }
         return 0;
     }
