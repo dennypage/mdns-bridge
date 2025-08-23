@@ -39,36 +39,40 @@
 
 
 // DNS limits
-#define MAX_LABEL_LEN           (64)    // Includes leading length byte
-#define MAX_NUM_LABELS          (127)   // Number of labels in a name
+#define MAX_LABEL_LEN               (64)    // Includes leading length byte
+#define MAX_NUM_LABELS              (127)   // Number of labels in a name
 
 // Initial/max query and response counts
-#define INITIAL_QUERY_COUNT     (25)
-#define INITIAL_RESOURCE_COUNT  (50)
-#define MAX_QUERY_COUNT         (1498)
-#define MAX_RESOURCE_COUNT      (749)
+#define INITIAL_QUERY_COUNT         (25)
+#define INITIAL_RESOURCE_COUNT      (50)
+#define MAX_QUERY_COUNT             (1498)
+#define MAX_RESOURCE_COUNT          (749)
 
 // Labels with the top two bits set are pointer labels. The lower 6 bits of
 // the label length are the high order bits of the offset to the next label.
 
-#define IS_LABEL_POINTER(len)   (((len) & 0xC0) == 0xC0)
-#define POINTER_OFFSET(hb, lb)  (((unsigned) (hb) & 0x3F) << 8 | (lb))
-#define OFFSET_TO_POINTER(off)  (htons(((off) & 0x3FFF) | 0xC000))
+#define IS_LABEL_POINTER(len)       (((len) & 0xC0) == 0xC0)
+#define POINTER_OFFSET(hb, lb)      (((unsigned) (hb) & 0x3F) << 8 | (lb))
+#define OFFSET_TO_POINTER(off)      (htons(((off) & 0x3FFF) | 0xC000))
 
 // KnownDNS types used in query and/or resource records
-#define DNS_TYPE_A              (1)
-#define DNS_TYPE_CNAME          (5)
-#define DNS_TYPE_PTR            (12)
-#define DNS_TYPE_HINFO          (13)
-#define DNS_TYPE_TXT            (16)
-#define DNS_TYPE_AAAA           (28)
-#define DNS_TYPE_SRV            (33)
-#define DNS_TYPE_DNAME          (39)
-#define DNS_TYPE_OPT            (41)
-#define DNS_TYPE_NSEC           (47)
-#define DNS_TYPE_SVCB           (64)
-#define DNS_TYPE_HTTPS          (65)
-#define DNS_TYPE_ANY            (255)
+#define DNS_TYPE_A                  (1)
+#define DNS_TYPE_CNAME              (5)
+#define DNS_TYPE_PTR                (12)
+#define DNS_TYPE_HINFO              (13)
+#define DNS_TYPE_TXT                (16)
+#define DNS_TYPE_AAAA               (28)
+#define DNS_TYPE_SRV                (33)
+#define DNS_TYPE_DNAME              (39)
+#define DNS_TYPE_OPT                (41)
+#define DNS_TYPE_NSEC               (47)
+#define DNS_TYPE_SVCB               (64)
+#define DNS_TYPE_HTTPS              (65)
+#define DNS_TYPE_ANY                (255)
+
+#define DNS_FLAG_RESPONSE(flags)    ((flags) & 0x8000)
+#define DNS_FLAG_OPCODE(flags)      ((flags) & 0x7800)
+#define DNS_FLAG_RCODE(flags)       ((flags) & 0x000F)
 
 
 //
