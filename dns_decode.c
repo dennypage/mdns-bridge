@@ -375,7 +375,7 @@ static unsigned int dns_decode_header(
         // Drop the packet
         if (flag_warn)
         {
-            dns_packet_error(packet, length (%u) too short to contain an mDNS header", packet->bytes);
+            dns_packet_error(packet, "length (%u) too short to contain an mDNS header", packet->bytes);
         }
         return 0;
     }
