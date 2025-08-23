@@ -343,19 +343,60 @@ static unsigned int dns_decode_header(
     _dns_state_t *              state,
     const packet_t *            packet)
 {
+    void *                      np;
     dns_header_t *              header;
     unsigned int                total_rr_count;
-    void *                      np;
+    uint16_t                    transaction_id;
+    uint16_t                    flags;
+    unsigned short              port;
 
-    if (packet->bytes < sizeof(dns_header_t))
+    // Only accept packets from fully compliant mDNS implementations
+    if (packet->src_addr.sa.sa_family == AF_INET)
+    {
+        port = ntohs(packet->src_addr.sin.sin_port);
+    }
+    else
+    {
+        port = ntohs(packet->src_addr.sin6.sin6_port);
+    }
+    if (port != MCAST_PORT)
     {
         // Drop the packet
-        dns_packet_error(packet, "dns_decode_header: packet too small");
+        if (flag_warn)
+        {
+            dns_packet_error(packet, "packet from a non mDNS source port (%u)", port);
+        }
         return 0;
     }
 
-    // Decode the header
+    // Sanity check
+    if (packet->bytes < sizeof(dns_header_t))
+    {
+        // Drop the packet
+        if (flag_warn)
+        {
+            dns_packet_error(packet, "packet length (%u) too short to contain an mDNS header", packet->bytes);
+        }
+        return 0;
+    }
+
+    // Decode the header transaction ID and flags and perform sanity checks
     header = (dns_header_t *) packet->buffer;
+    transaction_id = ntohs(header->transaction_id);
+    flags = ntohs(header->flags);
+
+    // Transaction ID, OPCODE and RCODE must all be zero
+    if (transaction_id ||  DNS_FLAG_OPCODE(flags) || DNS_FLAG_RCODE(flags))
+    {
+        // Drop the packet
+        if (flag_warn)
+        {
+            dns_packet_error(packet, "invalid transaction ID (%u) or flags (%u)", transaction_id, flags);
+        }
+        return 0;
+    }
+
+    // Decode the rest of the header
     state->recv_query_count = ntohs(header->query_count);
     state->recv_rr_count[RR_ANSWER] = ntohs(header->answer_count);
     state->recv_rr_count[RR_AUTHORITY] = ntohs(header->authority_count);
@@ -368,8 +409,11 @@ static unsigned int dns_decode_header(
         if (state->recv_query_count > MAX_QUERY_COUNT)
         {
             // Drop the packet
-            dns_packet_error(packet, "too many queries (%u)", state->recv_query_count);
-            return 0;
+            if (flag_warn)
+            {
+                dns_packet_error(packet, "number of queries (%u) exceeds maxiumum possible (%u)", state->recv_query_count, MAX_QUERY_COUNT);
+                return 0;
+            }
         }
 
         np = realloc(state->query_list, state->recv_query_count * sizeof(dns_query_t));
@@ -391,7 +435,10 @@ static unsigned int dns_decode_header(
         if (total_rr_count > MAX_RESOURCE_COUNT)
         {
             // Drop the packet
-            dns_packet_error(packet, "too many resource records (%u)", total_rr_count);
+            if (flag_warn)
+            {
+                dns_packet_error(packet, "number of resource records (%u) exceeds maximum possible (%u)", total_rr_count, MAX_RESOURCE_COUNT);
+            }
             return 0;
         }
 
