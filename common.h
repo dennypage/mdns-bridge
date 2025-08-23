@@ -44,6 +44,11 @@
 // size includes the IP/UDP headers, so actual packets will be smaller.
 #define MDNS_MAX_PACKET_SIZE    9000
 
+// Addresses and port
+#define IPV4_MCAST_ADDRESS      "224.0.0.251"
+#define IPV6_MCAST_ADDRESS      "ff02::fb"
+#define MCAST_PORT              5353
+
 // DNS type limits
 #define DNS_MAX_NAME_LEN        256     // Includes trailing null byte
 #define DNS_MAX_LABEL_LEN       64      // Includes leading length byte

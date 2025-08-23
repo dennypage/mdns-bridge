@@ -40,11 +40,6 @@
 #include "common.h"
 
 
-// Addresses and port
-#define IPV4_MCAST_ADDRESS      "224.0.0.251"
-#define IPV6_MCAST_ADDRESS      "ff02::fb"
-#define MCAST_PORT              5353
-
 // Multicast addresses (224.0.0.251 and ff02::fb) in hex
 #define IPV4_HEX_MCAST_ADDRESS  0xe00000fb
 #define IPV6_HEX_MCAST_ADDRESS  {{{ 0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfb }}}
