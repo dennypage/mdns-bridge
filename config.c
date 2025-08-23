@@ -45,17 +45,17 @@
 
 // Keys specific to the global section
 #define KEY_INTERFACES                  "interfaces"
-#define KEY_DISABLE_PACKET_FILTERING 	"disable-packet-filtering"
+#define KEY_DISABLE_PACKET_FILTERING    "disable-packet-filtering"
 
 // Keys common to global and interface sections
 #define KEY_DISABLE_IPV4                "disable-ipv4"
 #define KEY_DISABLE_IPV6                "disable-ipv6"
 
 // Keys specific to interface sections
-#define KEY_ALLOW_INBOUND_FILTERS     	"allow-inbound-filters"
-#define KEY_DENY_INBOUND_FILTERS      	"deny-inbound-filters"
-#define KEY_ALLOW_OUTBOUND_FILTERS    	"allow-outbound-filters"
-#define KEY_DENY_OUTBOUND_FILTERS     	"deny-outbound-filters"
+#define KEY_ALLOW_INBOUND_FILTERS       "allow-inbound-filters"
+#define KEY_DENY_INBOUND_FILTERS        "deny-inbound-filters"
+#define KEY_ALLOW_OUTBOUND_FILTERS      "allow-outbound-filters"
+#define KEY_DENY_OUTBOUND_FILTERS       "deny-outbound-filters"
 
 // Global config flags
 static unsigned int                     global_disable_ipv4 = 0;

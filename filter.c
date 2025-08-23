@@ -40,7 +40,7 @@
 unsigned int                    filtering_enabled = 1;
 
 // The global filter list
-filter_list_t *                	global_filter_list = NULL;
+filter_list_t *                 global_filter_list = NULL;
 
 // Count of unique outbound filters in use across all interfaces
 unsigned int                    unique_outbound_filter_count = 0;
