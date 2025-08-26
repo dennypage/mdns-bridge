@@ -346,28 +346,8 @@ static unsigned int dns_decode_header(
     void *                      np;
     dns_header_t *              header;
     unsigned int                total_rr_count;
-    uint16_t                    transaction_id;
     uint16_t                    flags;
     unsigned short              port;
-
-    // Only accept packets from fully compliant mDNS implementations
-    if (packet->src_addr.sa.sa_family == AF_INET)
-    {
-        port = ntohs(packet->src_addr.sin.sin_port);
-    }
-    else
-    {
-        port = ntohs(packet->src_addr.sin6.sin6_port);
-    }
-    if (port != MCAST_PORT)
-    {
-        // Drop the packet
-        if (flag_warn)
-        {
-            dns_packet_error(packet, "non mDNS source port (%u)", port);
-        }
-        return 0;
-    }
 
     // Sanity check
     if (packet->bytes < sizeof(dns_header_t))
@@ -380,20 +360,41 @@ static unsigned int dns_decode_header(
         return 0;
     }
 
-    // Decode the header transaction ID and flags and perform sanity checks
+    // Decode the header flags and perform sanity checks
     header = (dns_header_t *) packet->buffer;
-    transaction_id = ntohs(header->transaction_id);
     flags = ntohs(header->flags);
 
-    // Transaction ID, OPCODE and RCODE must all be zero
-    if (transaction_id ||  DNS_FLAG_OPCODE(flags) || DNS_FLAG_RCODE(flags))
+    // OPCODE and RCODE must be zero
+    if (DNS_FLAG_OPCODE(flags) || DNS_FLAG_RCODE(flags))
     {
         // Drop the packet
         if (flag_warn)
         {
-            dns_packet_error(packet, "invalid transaction ID (%u) or flags (%u)", transaction_id, flags);
+            dns_packet_error(packet, "invalid mDNS flags (%u)", flags);
         }
         return 0;
+    }
+
+    // mDNS responses must originate from the mDNS port
+    if (DNS_FLAG_RESPONSE(flags))
+    {
+        if (packet->src_addr.sa.sa_family == AF_INET)
+        {
+            port = ntohs(packet->src_addr.sin.sin_port);
+        }
+        else
+        {
+            port = ntohs(packet->src_addr.sin6.sin6_port);
+        }
+        if (port != MCAST_PORT)
+        {
+            // Drop the packet
+            if (flag_warn)
+            {
+                dns_packet_error(packet, "mDNS response from non mDNS port (%u)", port);
+            }
+            return 0;
+        }
     }
 
     // Decode the rest of the header
