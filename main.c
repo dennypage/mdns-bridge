@@ -153,7 +153,7 @@ static void parse_args(
             fprintf(stderr, "    -h display usage\n");
             fprintf(stderr, "    -f run in foreground\n");
             fprintf(stderr, "    -s log notifications via syslog\n");
-            fprintf(stderr, "    -w warn for unsupported dns types\n");
+            fprintf(stderr, "    -w warn on various mDNS decoding errors\n");
             fprintf(stderr, "    -c configuration file name\n");
             fprintf(stderr, "    -p process id file name\n");
             exit(1);
