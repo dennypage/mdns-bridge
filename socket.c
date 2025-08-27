@@ -272,7 +272,7 @@ static void os_bind_ipv4socket(
     r = bind(sock, (struct sockaddr *) &sin, sizeof(sin));
     if (r == -1)
     {
-        fatal("IPv4 bind to %s on %s failed: %s\n", IPV4_MCAST_ADDRESS, interface->name, strerror(errno));
+        fatal("IPv4 bind on %s failed: %s\n", interface->name, strerror(errno));
     }
 
     // Join the multicast group
@@ -371,7 +371,7 @@ static void os_bind_ipv6socket(
     r = bind(sock, (struct sockaddr *) &sin6, sizeof(sin6));
     if (r == -1)
     {
-        fatal("IPv6 bind to %s on %s failed: %s\n", IPV6_MCAST_ADDRESS, interface->name, strerror(errno));
+        fatal("IPv6 bind on %s failed: %s\n", interface->name, strerror(errno));
     }
 
     // Join the multicast group
