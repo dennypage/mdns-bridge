@@ -17,7 +17,7 @@ mdns-bridge [-h] [-f] [-s] [-w] [-c config_file] [-p pid_file]
     -h                  Display usage
     -f                  Run in the foreground           (default is to self-background)
     -s                  Log notifications via syslog    (default is stderr)
-    -w                  Enable warnings for mDNS decode errors that are suppressed by default
+    -w                  Warn for mDNS decode errors that are silent by default
     -c config_file      Configuration file to use       (default is mdns-bridge.conf)
     -p pid_file         Process ID filename             (default is no pid file)
 ```
