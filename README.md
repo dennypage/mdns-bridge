@@ -17,7 +17,7 @@ mdns-bridge [-h] [-f] [-s] [-w] [-c config_file] [-p pid_file]
     -h                  Display usage
     -f                  Run in the foreground           (default is to self-background)
     -s                  Log notifications via syslog    (default is stderr)
-    -w                  Warn on various mDNS decoding errors
+    -w                  Enable warnings for mDNS decode errors that are suppressed by default
     -c config_file      Configuration file to use       (default is mdns-bridge.conf)
     -p pid_file         Process ID filename             (default is no pid file)
 ```
@@ -265,8 +265,8 @@ dropped if found in mDNS packets:
 | PX      |  26  | No longer used            |
 | KX      |  36  | Key exchange              |
 
-There is an option (-w) that can be used to enable a warning message
-whenever an unsupported type is encountered.
+The (-w) option enables a warning message whenever an unsupported type
+is encountered.
 
 **If anyone encounters a valid use case for an unsupported mDNS
 type, please create an issue describing the situation.**
