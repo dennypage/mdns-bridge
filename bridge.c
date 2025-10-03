@@ -240,9 +240,9 @@ static void * bridge_thread(
     while (1)
     {
         num_events = epoll_wait(event_fd, events, ip_interface_count[ip_type], -1);
-        if (num_events < 0)
+        if (num_events < 0 && errno != EINTR)
         {
-            fatal("epoll_wait: %s\n", strerror(errno));
+            logger("epoll_wait: %s\n", strerror(errno));
         }
 
         for (index = 0; index < (unsigned int) num_events; index++)
@@ -298,9 +298,9 @@ static void * bridge_thread(
     while (1)
     {
         num_events = kevent(event_fd, NULL, 0, events, ip_interface_count[ip_type], NULL);
-        if (num_events < 0)
+        if (num_events < 0 && errno != EINTR)
         {
-            fatal("kevent: %s\n", strerror(errno));
+            logger("kevent: %s\n", strerror(errno));
         }
 
         for (index = 0; index < (unsigned int) num_events; index++)
