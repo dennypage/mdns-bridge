@@ -92,7 +92,14 @@ void fatal(
     va_list                     args;
 
     va_start(args, format);
-    vfprintf(stderr, format, args);
+    if (flag_syslog)
+    {
+        vsyslog(LOG_ERR, format, args);
+    }
+    else
+    {
+        vfprintf(stderr, format, args);
+    }
     va_end(args);
 
     exit(EXIT_FAILURE);
