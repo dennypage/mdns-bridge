@@ -206,7 +206,7 @@ static void os_bind_ipv4socket(
     int                         sock;
     const int                   on = 1;
     const int                   off = 0;
-    const int                   ttl = 255;
+    const int                   ttl = 1;
     int                         r;
 
     struct sockaddr_in          sin;
@@ -250,7 +250,7 @@ static void os_bind_ipv4socket(
     r = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
     if (r == -1)
     {
-        fatal("setsockopt (IPV6_MULTICAST_IF) for IPv6 on %s failed: %s\n", interface->name, strerror(errno));
+        fatal("setsockopt (IP_MULTICAST_TTL) for IPv4 on %s failed: %s\n", interface->name, strerror(errno));
     }
 
     // Set the outbound interface
@@ -302,7 +302,7 @@ static void os_bind_ipv6socket(
     int                         sock;
     const int                   on = 1;
     const int                   off = 0;
-    const int                   ttl = 255;
+    const int                   ttl = 1;
     int                         r;
 
     struct sockaddr_in6         sin6;
@@ -349,7 +349,7 @@ static void os_bind_ipv6socket(
     r = setsockopt(sock, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &ttl, sizeof(ttl));
     if (r == -1)
     {
-        fatal("setsockopt (IPV6_MULTICAST_IF) for IPv6 on %s failed: %s\n", interface->name, strerror(errno));
+        fatal("setsockopt (IPV6_UNICAST_HOPS) for IPv6 on %s failed: %s\n", interface->name, strerror(errno));
     }
 
     // Set the outbound interface
