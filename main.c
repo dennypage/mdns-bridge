@@ -119,7 +119,7 @@ static void term_handler(
         (void) unlink(pidfile_name);
     }
     logger("exiting on signal %d\n", signum);
-    exit(0);
+    exit(EXIT_SUCCESS);
 }
 
 
@@ -163,7 +163,7 @@ static void parse_args(
             fprintf(stderr, "    -w warn for mDNS decode errors that are silent by default\n");
             fprintf(stderr, "    -c configuration file name\n");
             fprintf(stderr, "    -p process id file name\n");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
     }
  }
