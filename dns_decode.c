@@ -519,7 +519,7 @@ static unsigned int dns_decode_queries(
                 allowed = 1;
                 break;
 
-            // Usupported or unknown query types
+            // Unsupported or unknown query types
             default:
                 if (flag_warn)
                 {
@@ -679,7 +679,7 @@ static unsigned int dns_decode_rrs(
                 allowed = 1;
                 break;
 
-            // Usupported or unknown resource record type
+            // Unsupported or unknown resource record type
             default:
                 if (flag_warn)
                 {

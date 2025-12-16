@@ -100,7 +100,7 @@ typedef struct
 } dns_match_name_t;
 
 
-// Filter list strucure
+// Filter list structure
 typedef enum
 {
     ALLOW                       = 0,

@@ -103,7 +103,7 @@ static void clist_reset(
 }
 
 //
-// Expand the compression list by adding addtional entries at the end
+// Expand the compression list by adding additional entries at the end
 //
 static compression_entry_t * clist_expand(
     _dns_state_t *              state,
@@ -265,7 +265,7 @@ static unsigned int dns_encode_name(
     unsigned int                copy_len;
     unsigned int                remaining;
 
-    // If the name contians only the root label, it cannot be compressed
+    // If the name contains only the root label, it cannot be compressed
     if (name->count <= 1)
     {
         send_packet->buffer[packet_offset] = 0;

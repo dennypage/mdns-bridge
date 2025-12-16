@@ -90,7 +90,7 @@ typedef struct __attribute__((__packed__))
     uint16_t                    additional_count;
 } dns_header_t;
 
-// DNS Query data. Preceeded by name.
+// DNS Query data. Preceded by name.
 typedef struct __attribute__((__packed__))
 {
     // NAME
@@ -98,7 +98,7 @@ typedef struct __attribute__((__packed__))
     uint16_t                    class;
 } dns_query_header_t;
 
-// DNS Resource Record data. Preceeded by name, followed by RDATA.
+// DNS Resource Record data. Preceded by name, followed by RDATA.
 typedef struct __attribute__((__packed__))
 {
     // NAME

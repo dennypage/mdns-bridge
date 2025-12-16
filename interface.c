@@ -230,7 +230,7 @@ static void build_interface_peer_lists(
 
 
 //
-// Set the configured interface lists and assocated peer lists
+// Set the configured interface lists and associated peer lists
 //
 void set_ip_interface_lists(void)
 {

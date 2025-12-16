@@ -346,7 +346,7 @@ static thread_local_storage_t * local_storage_create(
         local_storage->dst_addr.sin6 = ipv6_mcast_sockaddr;
         local_storage->dst_addr_len = sizeof(local_storage->dst_addr.sin6);
 
-        // Set send packet address family (principallyfor debugging purpose)
+        // Set send packet address family (principally for debugging purpose)
         local_storage->send_packet.src_addr.sin6.sin6_family = AF_INET6;
         local_storage->send_packet.src_addr.sin6.sin6_addr = in6addr_loopback;
     }
