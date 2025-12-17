@@ -78,8 +78,16 @@ void os_validate_interfaces(void)
     struct sockaddr *           sa;
     unsigned int                index;
     unsigned int                i;
-    int                         ipv4_found;
-    int                         ipv6_found;
+    int                         found_ipv4;
+    int                         found_ipv4_ll;
+    int                         found_ipv6;
+    int                         found_ipv6_ula;
+    int                         found_ipv6_ll;
+    struct in_addr              ipv4_addr;
+    struct in_addr              ipv4_addr_ll;
+    struct in6_addr             ipv6_addr;
+    struct in6_addr             ipv6_addr_ula;
+    struct in6_addr             ipv6_addr_ll;
 
     if (configured_interface_list == NULL)
     {
@@ -113,8 +121,11 @@ void os_validate_interfaces(void)
     for (index = 0; index < configured_interface_count; index++)
     {
         interface = &configured_interface_list[index];
-        ipv4_found = 0;
-        ipv6_found = 0;
+        found_ipv4 = 0;
+        found_ipv4_ll = 0;
+        found_ipv6 = 0;
+        found_ipv6_ula = 0;
+        found_ipv6_ll = 0;
 
         for (ifaddr_ptr = ifaddr_list; ifaddr_ptr != NULL; ifaddr_ptr = ifaddr_ptr->ifa_next)
         {
@@ -137,42 +148,85 @@ void os_validate_interfaces(void)
                     if (sa->sa_family == AF_INET && interface->disable_ip[IPV4] == 0)
                     {
                         sin = (struct sockaddr_in *) sa;
-                        if (ipv4_found)
+                        if (MDB_ADDR_IS_IPV4_LL(sin->sin_addr.s_addr))
                         {
-                            // Favor global addresses over link-local ones
-                            if (MDB_ADDR_IS_IPV4_LL(sin->sin_addr.s_addr))
+                            if (found_ipv4_ll == 0)
                             {
-                                continue;
+                                memcpy(&ipv4_addr_ll, &sin->sin_addr, sizeof(ipv4_addr_ll));
+                                found_ipv4_ll = 1;
                             }
                         }
-
-                        ipv4_found = 1;
-                        memcpy(&interface->ipv4_addr, &sin->sin_addr, sizeof(interface->ipv4_addr));
-                        inet_ntop(AF_INET, &interface->ipv4_addr, interface->ipv4_addr_str, sizeof(interface->ipv4_addr_str));
+                        else
+                        {
+                            if (found_ipv4 == 0)
+                            {
+                                memcpy(&ipv4_addr, &sin->sin_addr, sizeof(ipv4_addr));
+                                found_ipv4 = 1;
+                            }
+                        }
                     }
                     else if (sa->sa_family == AF_INET6 && interface->disable_ip[IPV6] == 0)
                     {
                         sin6 = (struct sockaddr_in6 *) sa;
-                        if (ipv6_found)
+                        if (MDB_ADDR_IS_IPV6_LL(sin6->sin6_addr.s6_addr))
                         {
-                            // Favor global addresses over link-local or unique-local
-                            if (MDB_ADDR_IS_IPV6_LL(sin6->sin6_addr.s6_addr) || MDB_ADDR_IS_IPV6_ULA(sin6->sin6_addr.s6_addr))
+                            if (found_ipv6_ll == 0)
                             {
-                                continue;
+                                memcpy(&ipv6_addr_ll, &sin6->sin6_addr, sizeof(ipv6_addr_ll));
+                                found_ipv6_ll = 1;
                             }
                         }
-
-                        ipv6_found = 1;
-                        memcpy(&interface->ipv6_addr, &sin6->sin6_addr, sizeof(interface->ipv6_addr));
-                        inet_ntop(AF_INET6, &interface->ipv6_addr, interface->ipv6_addr_str, sizeof(interface->ipv6_addr_str));
+                        else if (MDB_ADDR_IS_IPV6_ULA(sin6->sin6_addr.s6_addr))
+                        {
+                            if (found_ipv6_ula == 0)
+                            {
+                                memcpy(&ipv6_addr_ula, &sin6->sin6_addr, sizeof(ipv6_addr_ula));
+                                found_ipv6_ula = 1;
+                            }
+                        }
+                        else
+                        {
+                            if (found_ipv6 == 0)
+                            {
+                                memcpy(&ipv6_addr, &sin6->sin6_addr, sizeof(ipv6_addr));
+                                found_ipv6 = 1;
+                            }
+                        }
                     }
                 }
             }
         }
 
-        // Add the interface to the IPv4 list, or disable it if does have a valid IPv4 address
-        if (ipv4_found)
+        // If the interface does not have a routable IPv4 address, does it have a link-local?
+        if (found_ipv4 == 0)
         {
+            if (found_ipv4_ll)
+            {
+                memcpy(&ipv4_addr, &ipv4_addr_ll, sizeof(ipv4_addr));
+                found_ipv4 = 1;
+            }
+        }
+
+        // If the interface does not have a global IPv6 address, does it have a ULA or link-local?
+        if (found_ipv6 == 0)
+        {
+            if (found_ipv6_ula)
+            {
+                memcpy(&ipv6_addr, &ipv6_addr_ula, sizeof(ipv6_addr));
+                found_ipv6 = 1;
+            }
+            else if (found_ipv6_ll)
+            {
+                memcpy(&ipv6_addr, &ipv6_addr_ll, sizeof(ipv6_addr));
+                found_ipv6 = 1;
+            }
+        }
+
+        // Add the interface to the IPv4 list, or disable it if does have a valid IPv4 address
+        if (found_ipv4)
+        {
+            memcpy(&interface->ipv4_addr, &ipv4_addr, sizeof(interface->ipv4_addr));
+            inet_ntop(AF_INET, &ipv4_addr, interface->ipv4_addr_str, sizeof(interface->ipv4_addr_str));
             ip_interface_count[IPV4] += 1;
         }
         else if (interface->disable_ip[IPV4] == 0)
@@ -182,8 +236,10 @@ void os_validate_interfaces(void)
         }
 
         // Add the interface to the IPv6 list, or disable it if does have a valid IPv6 address
-        if (ipv6_found)
+        if (found_ipv6)
         {
+            memcpy(&interface->ipv6_addr, &ipv6_addr, sizeof(interface->ipv6_addr));
+            inet_ntop(AF_INET6, &ipv6_addr, interface->ipv6_addr_str, sizeof(interface->ipv6_addr_str));
             ip_interface_count[IPV6] += 1;
         }
         else if (interface->disable_ip[IPV6] == 0)
