@@ -28,7 +28,7 @@
 #
 [global]
   # The list of interfaces (mandatory).
-  interfaces = ix0, igc0, igc1
+  interfaces = ix0, igc0, igc1, igc2
 
   # Optionally disable ipv4 on all interfaces.
   disable-ipv4 = no
@@ -57,6 +57,18 @@
 #
 # The default behavior is to allow all names inbound and outbound.
 #
+# An interface section may provide a restriction list for inbound or
+# outbound peer interfaces.
+#
+# If an inbound-interfaces list is provided, only packets arriving
+# on interfaces in the list may be forwarded to the current interface.
+#
+# If an outbound-interface list is provided, packets arriving on this
+# interface may only be forwarded to interfaces in the list.
+#
+# The default behavior is to allow all interfaces in the global list
+# for inbound and outbound.
+#
 [ix0]
   # An optional comma separated list of filters to allow
   #allow-inbound-filters = _airplay
@@ -77,3 +89,10 @@
 [igc1]
   # Optionally Disable ipv6.
   #disable-ipv6 = yes
+
+[igc2]
+  # Optionally restrict inbound interfaces
+  #inbound-interfaces = ix0, igc0
+
+  # Optionally restrict outbound interfaces
+  #outbound-interfaces = igc0, igc1
