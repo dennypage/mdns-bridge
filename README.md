@@ -187,8 +187,14 @@ an interface section are optional.
   # An optional list of filters to allow inbound
   allow-inbound-filters = _ipp, _ipps, _airplay
 
-  # An option list of filters to deny outbound
+  # An optional list of filters to deny outbound
   deny-outbound-filters = _ssh
+
+  # An optional list of inbound peer interfaces
+  inbound-interfaces = igc0, igc1
+
+  # An optional list of outbound peer interfaces
+  outbound-interfaces = igc1
 
 ```
 
@@ -210,6 +216,15 @@ an interface section are optional.
 * `deny-outbound-filters`: If defined, any names that match one of the
     filters in the list will be discarded from outgoing packets on this
     interfaces. There is no default.
+* `inbound-interfaces`: If defined, only packets arriving on one of the
+    interfaces specified in the list may be forwarded to this interface.
+    The list must be a subset of the global interfaces list, and the
+    default is to allow all interfaces in the global list.
+* `outbound-interfaces`: If defined, packets arriving on this interface
+    may only be forwarded to interfaces specified in the list. The list
+    must be a subset of the global interfaces list, and the default is 
+    to allow all interfaces in the global list.
+
 
 ##### Notes:
 * The parameter to enable or disable IPv4/IPv6 cannot override the global
