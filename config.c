@@ -72,7 +72,7 @@ static unsigned int                     config_lineno = 0;
 static char * trim_leading_whitespace(
     char *                      str)
 {
-    while (isspace(*str))
+    while (*str && isspace((unsigned char) *str))
     {
         str += 1;
     }
@@ -88,11 +88,18 @@ static void trim_trailing_whitespace(
     char *                      str)
 {
     char *                      end;
+    unsigned int                len;
 
-    end = str + strlen(str) - 1;
-    while (isspace(*end))
+    len = strlen(str);
+    if (len == 0)
     {
-        *end = 0;
+        return;
+    }
+
+    end = str + len - 1;
+    while (end >= str && isspace((unsigned char) *end))
+    {
+        *end = '\0';
         end -= 1;
     }
 }
@@ -110,26 +117,30 @@ static char * split_keyvalue(
     value = strchr(line, '=');
     if (value == NULL)
     {
-        fatal("%s line %d: Syntax error - missing assignment\n", config_filename, config_lineno);
+        fatal("%s line %u: Syntax error - missing assignment\n", config_filename, config_lineno);
     }
-    *value = 0;
+    *value = '\0';
+
+    // Trim the key and ensure it is not empty
+    trim_trailing_whitespace(line);
+    if (*line == '\0')
+    {
+        fatal("%s line %u: Syntax error - missing key\n", config_filename, config_lineno);
+    }
 
     // Trim the value and ensure it is not empty
     value = trim_leading_whitespace(value + 1);
-    if (*value == 0)
+    if (*value == '\0')
     {
-        fatal("%s line %d: Syntax error - missing value\n", config_filename, config_lineno);
+        fatal("%s line %u: Syntax error - missing value\n", config_filename, config_lineno);
     }
-
-    // Trim the key
-    trim_trailing_whitespace(line);
 
     return (value);
 }
 
 
 //
-// Convert a comma separated list of strings into a sorted array
+// Convert a comma separated list of strings into an array of strings
 // NB: The array MUST be at least MAX_LIST_ARRAY in size
 //
 static unsigned int split_comma_list(
@@ -147,24 +158,24 @@ static unsigned int split_comma_list(
         {
             if (index + 1 >= MAX_LIST_ARRAY)
             {
-                fatal("%s line %d: Invalid list - elements exceed max allowed (%u)\n", config_filename, config_lineno, MAX_LIST_ARRAY);
+                fatal("%s line %u: Invalid list - elements exceed max allowed (%u)\n", config_filename, config_lineno, MAX_LIST_ARRAY);
             }
 
             // Terminate the current element
-            *str = 0;
-            trim_trailing_whitespace(str);
+            *str = '\0';
+            trim_trailing_whitespace(array[index]);
 
             // Ensure the current element is not empty
-            if (array[index] == str)
+            if (*array[index] == '\0')
             {
-                fatal("%s line %d: Invalid list - empty element\n", config_filename, config_lineno);
+                fatal("%s line %u: Invalid list - empty element\n", config_filename, config_lineno);
             }
 
             // Insure the next element is not empty
             str = trim_leading_whitespace(str + 1);
-            if (*str == 0)
+            if (*str == '\0')
             {
-                fatal("%s line %d: Invalid list - empty element\n", config_filename, config_lineno);
+                fatal("%s line %u: Invalid list - empty element\n", config_filename, config_lineno);
             }
 
             // Add the new element to the array
@@ -199,7 +210,7 @@ static char * read_line(
         line = trim_leading_whitespace(buffer);
 
         // Ignore empty and comment lines
-        if (*line == 0 || *line == '#')
+        if (*line == '\0' || *line == '#')
         {
             continue;
         }
@@ -225,8 +236,8 @@ void read_config(void)
     interface_t *               interface;
     char *                      line;
     char *                      value;
-    unsigned int                offset;
     unsigned int                index;
+    unsigned int                len;
 
     // Open the config file
     fp = fopen(config_filename, "r");
@@ -258,12 +269,12 @@ void read_config(void)
             list_array_count = split_comma_list(value, list_array);
             if (list_array_count < 2)
             {
-                fatal("%s line %d: A minimum of 2 interfaces are required\n", config_filename, config_lineno);
+                fatal("%s line %u: A minimum of 2 interfaces are required\n", config_filename, config_lineno);
             }
 
             if (set_interface_list(list_array, list_array_count))
             {
-                fatal("%s line %d: Only one interface list is allowed\n", config_filename, config_lineno);
+                fatal("%s line %u: Only one interface list is allowed\n", config_filename, config_lineno);
             }
         }
         else if (strcmp(line, KEY_DISABLE_IPV4) == 0)
@@ -278,7 +289,7 @@ void read_config(void)
             }
             else
             {
-                fatal("%s line %d: Invalid value for %s \"%s\"\n", config_filename, config_lineno, KEY_DISABLE_IPV4, value);
+                fatal("%s line %u: Invalid value for %s \"%s\"\n", config_filename, config_lineno, KEY_DISABLE_IPV4, value);
             }
         }
         else if (strcmp(line, KEY_DISABLE_IPV6) == 0)
@@ -293,7 +304,7 @@ void read_config(void)
             }
             else
             {
-                fatal("%s line %d: Invalid value for %s \"%s\"\n", config_filename, config_lineno, KEY_DISABLE_IPV6, value);
+                fatal("%s line %u: Invalid value for %s \"%s\"\n", config_filename, config_lineno, KEY_DISABLE_IPV6, value);
             }
         }
         else if (strcmp(line, KEY_DISABLE_PACKET_FILTERING) == 0)
@@ -302,7 +313,7 @@ void read_config(void)
             {
                 if (global_filter_list)
                 {
-                    fatal("%s line %d: %s cannot be combined with %s or %s\n", config_filename, config_lineno,
+                    fatal("%s line %u: %s cannot be combined with %s or %s\n", config_filename, config_lineno,
                           KEY_DISABLE_PACKET_FILTERING, KEY_ALLOW_INBOUND_FILTERS, KEY_DENY_INBOUND_FILTERS);
                 }
 
@@ -314,7 +325,7 @@ void read_config(void)
             }
             else
             {
-                fatal("%s line %d: Invalid value for %s \"%s\"\n", config_filename, config_lineno,
+                fatal("%s line %u: Invalid value for %s \"%s\"\n", config_filename, config_lineno,
                       KEY_DISABLE_PACKET_FILTERING, value);
             }
         }
@@ -322,31 +333,31 @@ void read_config(void)
         {
             if (filtering_enabled == 0)
             {
-                fatal("%s line %d: %s cannot be combined with %s\n", config_filename, config_lineno,
+                fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
                       KEY_ALLOW_INBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
             }
             list_array_count = split_comma_list(value, list_array);
             if (set_global_filter_list(ALLOW, list_array, list_array_count))
             {
-                fatal("%s line %d: Only one global filter list is allowed\n", config_filename, config_lineno);
+                fatal("%s line %u: Only one global filter list is allowed\n", config_filename, config_lineno);
             }
         }
         else if (strcmp(line, KEY_DENY_INBOUND_FILTERS) == 0)
         {
             if (filtering_enabled == 0)
             {
-                fatal("%s line %d: %s cannot be combined with %s\n", config_filename, config_lineno,
+                fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
                       KEY_DENY_INBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
             }
             list_array_count = split_comma_list(value, list_array);
             if (set_global_filter_list(DENY, list_array, list_array_count))
             {
-                fatal("%s line %d: Only one global filter list is allowed\n", config_filename, config_lineno);
+                fatal("%s line %u: Only one global filter list is allowed\n", config_filename, config_lineno);
             }
         }
         else
         {
-            fatal("%s line %d: Unknown [global] parameter \"%s\"\n", config_filename, config_lineno, line);
+            fatal("%s line %u: Unknown [global] parameter \"%s\"\n", config_filename, config_lineno, line);
         }
     }
 
@@ -380,12 +391,12 @@ void read_config(void)
         line = trim_leading_whitespace(line + 1);
 
         // Ensure the section name (interface name) is terminated
-        offset = strlen(line) - 1;
-        if (line[offset] != ']')
+        len = strlen(line);
+        if (len == 0 || line[len - 1] != ']')
         {
-            fatal("%s line %d: Syntax error\n", config_filename, config_lineno);
+            fatal("%s line %u: Syntax error\n", config_filename, config_lineno);
         }
-        line[offset] = 0;
+        line[len - 1] = '\0';
 
         // Ignore trailing whitespace
         trim_trailing_whitespace(line);
@@ -393,14 +404,14 @@ void read_config(void)
         // Insure the interface name is valid
         if (strlen(line) == 0 || strpbrk(line, "[]") != NULL)
         {
-            fatal("%s line %d: Syntax error\n", config_filename, config_lineno);
+            fatal("%s line %u: Syntax error\n", config_filename, config_lineno);
         }
 
         // Find the interface
         interface = get_interface_by_name(line);
         if (interface == NULL)
         {
-            fatal("%s line %d: Interface \"%s\" is not in the [global] interfaces list\n", config_filename, config_lineno, line);
+            fatal("%s line %u: Interface \"%s\" is not in the [global] interfaces list\n", config_filename, config_lineno, line);
         }
 
         // Read the rest of the interface section
@@ -424,13 +435,13 @@ void read_config(void)
                 {
                     if (global_disable_ipv4)
                     {
-                        fatal("%s line %d: IPv4 is globally disabled\n", config_filename, config_lineno);
+                        fatal("%s line %u: IPv4 is globally disabled\n", config_filename, config_lineno);
                     }
                     interface->disable_ip[IPV4] = 0;
                 }
                 else
                 {
-                    fatal("%s line %d: Invalid value for %s \"%s\"\n", config_filename, config_lineno, KEY_DISABLE_IPV4, value);
+                    fatal("%s line %u: Invalid value for %s \"%s\"\n", config_filename, config_lineno, KEY_DISABLE_IPV4, value);
                 }
             }
             else if (strcmp(line, KEY_DISABLE_IPV6) == 0)
@@ -443,81 +454,82 @@ void read_config(void)
                 {
                     if (global_disable_ipv6)
                     {
-                        fatal("%s line %d: IPv6 is globally disabled\n", config_filename, config_lineno);
+                        fatal("%s line %u: IPv6 is globally disabled\n", config_filename, config_lineno);
                     }
                     interface->disable_ip[IPV6] = 0;
                 }
                 else
                 {
-                    fatal("%s line %d: Invalid value for %s \"%s\"\n", config_filename, config_lineno, KEY_DISABLE_IPV6, value);
+                    fatal("%s line %u: Invalid value for %s \"%s\"\n", config_filename, config_lineno, KEY_DISABLE_IPV6, value);
                 }
             }
             else if (strcmp(line, KEY_ALLOW_INBOUND_FILTERS) == 0)
             {
                 if (filtering_enabled == 0)
                 {
-                    fatal("%s line %d: %s cannot be combined with %s\n", config_filename, config_lineno,
+                    fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
                           KEY_ALLOW_INBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
                 }
 
                 list_array_count = split_comma_list(value, list_array);
                 if (set_interface_inbound_filter_list(interface, ALLOW, list_array, list_array_count))
                 {
-                    fatal("%s line %d: Only one inbound filter list per interface is allowed\n", config_filename, config_lineno);
+                    fatal("%s line %u: Only one inbound filter list per interface is allowed\n", config_filename, config_lineno);
                 }
             }
             else if (strcmp(line, KEY_DENY_INBOUND_FILTERS) == 0)
             {
                 if (filtering_enabled == 0)
                 {
-                    fatal("%s line %d: %s cannot be combined with %s\n", config_filename, config_lineno,
+                    fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
                           KEY_DENY_INBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
                 }
 
                 list_array_count = split_comma_list(value, list_array);
                 if (set_interface_inbound_filter_list(interface, DENY, list_array, list_array_count))
                 {
-                    fatal("%s line %d: Only one inbound filter list per interface is allowed\n", config_filename, config_lineno);
+                    fatal("%s line %u: Only one inbound filter list per interface is allowed\n", config_filename, config_lineno);
                 }
             }
             else if (strcmp(line, KEY_ALLOW_OUTBOUND_FILTERS) == 0)
             {
                 if (filtering_enabled == 0)
                 {
-                    fatal("%s line %d: %s cannot be combined with %s\n", config_filename, config_lineno,
+                    fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
                           KEY_ALLOW_OUTBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
                 }
 
                 list_array_count = split_comma_list(value, list_array);
                 if (set_interface_outbound_filter_list(interface, ALLOW, list_array, list_array_count))
                 {
-                    fatal("%s line %d: Only one outbound filter list per interface is allowed\n", config_filename, config_lineno);
+                    fatal("%s line %u: Only one outbound filter list per interface is allowed\n", config_filename, config_lineno);
                 }
             }
             else if (strcmp(line, KEY_DENY_OUTBOUND_FILTERS) == 0)
             {
                 if (filtering_enabled == 0)
                 {
-                    fatal("%s line %d: %s cannot be combined with %s\n", config_filename, config_lineno,
+                    fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
                           KEY_DENY_OUTBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
                 }
 
                 list_array_count = split_comma_list(value, list_array);
                 if (set_interface_outbound_filter_list(interface, DENY, list_array, list_array_count))
                 {
-                    fatal("%s line %d: Only one outbound filter list per interface is allowed\n", config_filename, config_lineno);
+                    fatal("%s line %u: Only one outbound filter list per interface is allowed\n", config_filename, config_lineno);
                 }
             }
+            // FIXME put some cool stuff here for peer interface filters...
             else
             {
-                fatal("%s line %d: Unknown interface parameter \"%s\"\n", config_filename, config_lineno, line);
+                fatal("%s line %u: Unknown interface parameter \"%s\"\n", config_filename, config_lineno, line);
             }
         }
     }
 
     if (line != NULL)
     {
-        fatal("%s line %d: Syntax error\n", config_filename, config_lineno);
+        fatal("%s line %u: Syntax error\n", config_filename, config_lineno);
     }
 
     fclose(fp);
