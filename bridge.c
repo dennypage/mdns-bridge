@@ -130,9 +130,14 @@ static void receive(
     {
         if (global_filter_list || interface->inbound_filter_list)
         {
-            dns_encode_packet(local_storage->dns_state, &local_storage->recv_packet, &local_storage->send_packet, NULL);
+            r = dns_encode_packet(local_storage->dns_state, &local_storage->recv_packet, &local_storage->send_packet, NULL);
+            if (r == 0)
+            {
+                // If the encoder failed, drop the packet
+                return;
+            }
             packet = &local_storage->send_packet;
-       }
+        }
 
         for (peer_index = 0; peer_index < interface->peer_count[ip_type]; peer_index++)
         {

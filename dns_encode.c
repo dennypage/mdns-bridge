@@ -421,6 +421,11 @@ static unsigned int dns_encode_queries(
         {
             // Encode the name
             packet_offset = dns_encode_name(state, send_packet, packet_offset, &query->name);
+            if (packet_offset == 0)
+            {
+                // If there was a problem encoding the name, drop the packet
+                return 0;
+            }
 
             // Set the header elements
             query_header = (dns_query_header_t *) (send_packet->buffer + packet_offset);
@@ -491,6 +496,11 @@ static unsigned int dns_encode_rrs(
         {
             // Encode the name
             packet_offset = dns_encode_name(state, send_packet, packet_offset,&rr->name);
+            if (packet_offset == 0)
+            {
+                // If there was a problem encoding the name, drop the packet
+                return 0;
+            }
 
             // Set the header elements
             rr_header = (dns_rr_header_t *) (send_packet->buffer + packet_offset);
@@ -509,6 +519,11 @@ static unsigned int dns_encode_rrs(
                 case DNS_TYPE_DNAME:
                     // Encode the name
                     packet_offset = dns_encode_name(state, send_packet, packet_offset, &rr->rdata_name);
+                    if (packet_offset == 0)
+                    {
+                        // If there was a problem encoding the name, drop the packet
+                        return 0;
+                    }
                     break;
 
                 // This type has a fixed length secondary data structure followed by a domain name
@@ -520,12 +535,22 @@ static unsigned int dns_encode_rrs(
 
                     // Encode the name
                     packet_offset = dns_encode_name(state, send_packet, packet_offset, &rr->rdata_name);
+                    if (packet_offset == 0)
+                    {
+                        // If there was a problem encoding the name, drop the packet
+                        return 0;
+                    }
                     break;
 
                 // This type has a domain name followed by variable length secondary data
                 case DNS_TYPE_NSEC:
                     // Encode the name
                     packet_offset = dns_encode_name(state, send_packet, packet_offset, &rr->rdata_name);
+                    if (packet_offset == 0)
+                    {
+                        // If there was a problem encoding the name, drop the packet
+                        return 0;
+                    }
 
                     // Copy the secondary data from the original packet
                     secondary_data = (unsigned char *) rr->data + sizeof(dns_rr_header_t);
@@ -578,12 +603,22 @@ unsigned int dns_encode_packet(
 
     // Encode the queries
     packet_offset = dns_encode_queries(state, send_packet, packet_offset, send_filter_list, &query_count);
+    if (packet_offset == 0)
+    {
+        // If there was a problem encoding the queries, drop the packet
+        return 0;
+    }
 
     // Encode the resource record sections (answer, authority, additional)
     for (rr_section_type = 0; rr_section_type < NUM_RR_SECTION_TYPES; rr_section_type++)
     {
         packet_offset = dns_encode_rrs(state, rr_section_type, send_packet, packet_offset,
             send_filter_list,  &rr_count[rr_section_type]);
+        if (packet_offset == 0)
+        {
+            // If there was a problem encoding the resource record, drop the packet
+            return 0;
+        }
     }
 
     // If everything has been filtered, drop the packet
