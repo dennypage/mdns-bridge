@@ -289,7 +289,7 @@ static void os_bind_ipv4socket(
 
     // Set interface specific binding if available
 #if defined(SO_BINDTODEVICE)
-    r = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, interface->name, strlen(interface->name));
+    r = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, interface->name, strlen(interface->name) + 1);
     if (r == -1)
     {
         fatal("setsockopt (SO_BINDTODEVICE) for IPv4 on %s failed: %s\n", interface->name, strerror(errno));
@@ -388,7 +388,7 @@ static void os_bind_ipv6socket(
 
     // Set interface specific binding if available
 #if defined(SO_BINDTODEVICE)
-    r = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, interface->name, strlen(interface->name));
+    r = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, interface->name, strlen(interface->name) + 1);
     if (r == -1)
     {
         fatal("setsockopt (SO_BINDTODEVICE) for IPv6 on %s failed: %s\n", interface->name, strerror(errno));
