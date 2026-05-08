@@ -241,6 +241,7 @@ unsigned int set_interface_outbound_filter_list(
     unsigned int                count)
 {
     filter_list_t *             filter_list;
+    unsigned int                filter_list_unique = 1;
     unsigned int                index;
 
     // If a list was previously defined, return error
@@ -261,13 +262,17 @@ unsigned int set_interface_outbound_filter_list(
             // If the new list is a duplicate, adopt the existing list
             filter_list_destroy(filter_list);
             filter_list = configured_interface_list[index].outbound_filter_list;
+            filter_list_unique = 0;
             break;
         }
     }
 
+    if (filter_list_unique) {
+        unique_outbound_filter_count += 1;
+    }
+
     // Assign the list to the interface
     interface->outbound_filter_list = filter_list;
-    unique_outbound_filter_count += 1;
     return 0;
 }
 
