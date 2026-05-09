@@ -402,10 +402,10 @@ static void os_bind_ipv6socket(
 #endif
 
     // Set the ttl
-    r = setsockopt(sock, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &ttl, sizeof(ttl));
+    r = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &ttl, sizeof(ttl));
     if (r == -1)
     {
-        fatal("setsockopt (IPV6_UNICAST_HOPS) for IPv6 on %s failed: %s\n", interface->name, strerror(errno));
+        fatal("setsockopt (IPV6_MULTIICAST_HOPS) for IPv6 on %s failed: %s\n", interface->name, strerror(errno));
     }
 
     // Set the outbound interface
