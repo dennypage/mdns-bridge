@@ -389,7 +389,7 @@ void start_bridges(void)
         r = pthread_create(&thread_id, NULL, &bridge_thread, local_storage);
         if (r != 0)
         {
-            fatal("cannot create IPv4 bridge thread: %s\n", strerror(errno));
+            fatal("cannot create IPv4 bridge thread: %s\n", strerror(r));
         }
     }
 
@@ -407,7 +407,7 @@ void start_bridges(void)
         r = pthread_create(&thread_id, NULL, &bridge_thread, local_storage);
         if (r != 0)
         {
-            fatal("cannot create IPv6 bridge thread: %s\n", strerror(errno));
+            fatal("cannot create IPv6 bridge thread: %s\n", strerror(r));
         }
     }
 }
