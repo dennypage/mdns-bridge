@@ -54,7 +54,7 @@ static void dns_packet_error(
     ...)
 {
     char                        error_str[1024];
-    char                        addr_str[INET6_ADDRSTRLEN];
+    char                        addr_str[INET6_ADDRSTRLEN] = "[unknown]";
     va_list                     args;
 
     // Format the error string
@@ -142,12 +142,13 @@ const dns_match_name_t * dns_save_match_name(
 
     // Get the length
     string_len = strlen(string);
-    if (string_len < 1 || string_len >= DNS_MAX_NAME_LEN)
+    if (string_len < 1 || string_len >= DNS_MAX_NAME_LEN - 2)
     {
         fatal("Invalid DNS name \"%s\"\n", string);
     }
-    // NB: +1 is for the initial length byte, other length bytes are accounted for by dots in the string
-    name_len = string_len + 1;
+    // NB: +2 is for the initial length byte and the final null terminator
+    //     other length bytes are accounted for by dots in the string
+    name_len = string_len + 2;
 
     // Allocate the name, but only as large as needed to hold the name
     name = malloc(sizeof(dns_match_name_t) + name_len);
@@ -157,6 +158,7 @@ const dns_match_name_t * dns_save_match_name(
     }
 
     // Initialize the name
+    // NB: the +1 on the length is for the final null terminator
     name->length = name_len;
 
     // Save the labels
@@ -165,7 +167,7 @@ const dns_match_name_t * dns_save_match_name(
         // Ensure we have a valid label
         label_len = strcspn(string + string_offset, ".");
         label_count += 1;
-        if (label_len == 0 || label_len > DNS_MAX_LABEL_LEN || label_count > MAX_NUM_LABELS)
+        if (label_len == 0 || label_len >= DNS_MAX_LABEL_LEN || label_count > MAX_NUM_LABELS)
         {
             fatal("Invalid DNS name \"%s\"\n", string);
         }
@@ -184,6 +186,7 @@ const dns_match_name_t * dns_save_match_name(
         string_offset += 1;
     }
 
+    name->labels[name_offset] = '\0';
     return (name);
 }
 
@@ -258,11 +261,24 @@ static unsigned int dns_decode_name(
 
     while (1)
     {
+        if (label_offset >= packet->bytes)
+        {
+            // Drop the packet
+            dns_packet_error(packet, "name overrun");
+            return 0;
+        }
         label_len = packet->buffer[label_offset];
 
         // Is it a pointer?
         if (IS_LABEL_POINTER(label_len))
         {
+            if (label_offset + 1 >= packet->bytes)
+            {
+                // Drop the packet
+                dns_packet_error(packet, "name overrun");
+                return 0;
+            }
+
             // Get the pointer
             pointer = POINTER_OFFSET(label_len, packet->buffer[label_offset + 1]);
 
@@ -413,8 +429,8 @@ static unsigned int dns_decode_header(
             if (flag_warn)
             {
                 dns_packet_error(packet, "number of queries (%u) exceeds maxiumum possible (%u)", state->recv_query_count, MAX_QUERY_COUNT);
-                return 0;
             }
+            return 0;
         }
 
         np = realloc(state->query_list, state->recv_query_count * sizeof(dns_query_t));
@@ -643,7 +659,7 @@ static unsigned int dns_decode_rrs(
                 }
 
                 // Skip link local addresses
-                if ((((struct in_addr *) (packet->buffer + packet_offset))->s_addr & 0xffff0000) == 0xa9fe0000)
+                if ((ntohl(((struct in_addr *) (packet->buffer + packet_offset))->s_addr) & 0xffff0000) == 0xa9fe0000)
                 {
                     allowed = 0;
                 }
@@ -698,6 +714,12 @@ static unsigned int dns_decode_rrs(
             {
                 case DNS_TYPE_SRV:
                     // This type has a fixed length secondary data structure followed by a domain name
+                    if (data_len < sizeof(dns_rr_srv_data_t))
+                    {
+                        // Drop the packet
+                        dns_packet_error(packet, "invalid srv record length in %s record", rr_section_name[section_type]);
+                        return 0;
+                    }
                     rr->secondary_len = sizeof(dns_rr_srv_data_t);
                     tmp_offset = packet_offset + rr->secondary_len;
                     tmp_offset = dns_decode_name(packet, tmp_offset, &rr->rdata_name);
