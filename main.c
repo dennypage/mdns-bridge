@@ -250,7 +250,7 @@ static void write_pidfile(
     int                         r;
 
     len = snprintf(pidbuf, sizeof(pidbuf), "%u\n", (unsigned) getpid());
-    if (len < 0 || (size_t) len > sizeof(pidbuf))
+    if (len < 0 || (size_t) len >= sizeof(pidbuf))
     {
         fatal("error formatting pidfile\n");
     }
