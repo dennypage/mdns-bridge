@@ -372,7 +372,11 @@ static void os_bind_ipv6socket(
     }
 
     // Ensure we don't end up with a mixed IPv4 / IPv6 socket
-    setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (void *) &on, sizeof(on));
+    r = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (void *) &on, sizeof(on));
+    if (r == -1)
+    {
+        fatal("setsockopt (IPV6_V6ONLY) failed: %s\n", strerror(errno));
+    }
 
     // Set SO_REUSEADDR and SO_REUSEPORT
     r = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void *) &on, sizeof(on));
@@ -405,7 +409,7 @@ static void os_bind_ipv6socket(
     r = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &ttl, sizeof(ttl));
     if (r == -1)
     {
-        fatal("setsockopt (IPV6_MULTIICAST_HOPS) for IPv6 on %s failed: %s\n", interface->name, strerror(errno));
+        fatal("setsockopt (IPV6_MULTICAST_HOPS) for IPv6 on %s failed: %s\n", interface->name, strerror(errno));
     }
 
     // Set the outbound interface
