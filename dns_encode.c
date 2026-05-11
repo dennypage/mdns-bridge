@@ -407,9 +407,11 @@ static unsigned int dns_encode_queries(
             // These query types are filtered on the owner domain name
             case DNS_TYPE_SRV:
             case DNS_TYPE_TXT:
+            case DNS_TYPE_SVCB:
+            case DNS_TYPE_HTTPS:
             case DNS_TYPE_ANY:
                 allowed = allowed_outbound(send_filter_list, &query->name);
-               break;
+                break;
 
             // Other query types are not filtered
             default:
@@ -476,6 +478,8 @@ static unsigned int dns_encode_rrs(
             case DNS_TYPE_SRV:
             case DNS_TYPE_TXT:
             case DNS_TYPE_HINFO:
+            case DNS_TYPE_SVCB:
+            case DNS_TYPE_HTTPS:
                 allowed = allowed_outbound(send_filter_list, &rr->name);
                 break;
 
