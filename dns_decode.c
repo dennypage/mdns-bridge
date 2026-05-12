@@ -205,12 +205,6 @@ void dns_labels_to_string(
     unsigned int                string_offset = 0;
     unsigned int                label_len;
 
-    // If no length is provided, use the length of the first label
-    if (length == 0)
-    {
-        length = labels[0] + 1;
-    }
-
     while (labels_offset < length)
     {
         label_len = labels[labels_offset];
