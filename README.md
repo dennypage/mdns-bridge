@@ -249,7 +249,7 @@ The following mDNS types are supported by mdns-bridge:
 | ANY     | 255  | All record types request  | Not filtered                     |
 
 <sup>*</sup> A and AAAA records are not filtered by name, but link local addresses are never forwarded.
-  
+
 ### Unsupported mDNS types
 The following mDNS types are not supported by mdns-bridge, and will be
 dropped if found in mDNS packets:
