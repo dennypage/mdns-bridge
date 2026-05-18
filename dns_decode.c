@@ -142,13 +142,12 @@ const dns_match_name_t * dns_save_match_name(
 
     // Get the length
     string_len = strlen(string);
-    if (string_len < 1 || string_len >= DNS_MAX_NAME_LEN - 2)
+    if (string_len < 1 || string_len >= DNS_MAX_NAME_LEN)
     {
         fatal("Invalid DNS name \"%s\"\n", string);
     }
-    // NB: +2 is for the initial length byte and the final null terminator
-    //     other length bytes are accounted for by dots in the string
-    name_len = string_len + 2;
+    // NB: +1 is for the initial length byte, other length bytes are accounted for by dots in the string
+    name_len = string_len + 1;
 
     // Allocate the name, but only as large as needed to hold the name
     name = malloc(sizeof(dns_match_name_t) + name_len);
@@ -158,7 +157,6 @@ const dns_match_name_t * dns_save_match_name(
     }
 
     // Initialize the name
-    // NB: the +1 on the length is for the final null terminator
     name->length = name_len;
 
     // Save the labels
@@ -186,7 +184,6 @@ const dns_match_name_t * dns_save_match_name(
         string_offset += 1;
     }
 
-    name->labels[name_offset] = '\0';
     return (name);
 }
 
