@@ -150,7 +150,7 @@ static unsigned int split_comma_list(
     unsigned int                index = 0;
 
     // Add the first element to the array
-    array[0] = str;
+    array[index] = str;
 
     while (*str)
     {
