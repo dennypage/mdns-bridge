@@ -149,8 +149,9 @@ static void receive(
                     // Set the destination scope ID
                     dst_addr->sin6.sin6_scope_id = peer->if_index;
                 }
+
                 bytes = sendto(peer->sock[ip_type], packet->buffer, packet->bytes, 0, &dst_addr->sa, dst_addr_len);
-                if (bytes == -1)
+                if (bytes == -1 && errno != ENETDOWN)
                 {
                     logger("sendto error on interface %s: %s\n", peer->name, strerror(errno));
                 }
@@ -184,8 +185,9 @@ static void receive(
                         // Set the destination scope ID
                         dst_addr->sin6.sin6_scope_id = peer->if_index;
                     }
+
                     bytes = sendto(peer->sock[ip_type], packet->buffer, packet->bytes, 0, &dst_addr->sa, dst_addr_len);
-                    if (bytes == -1)
+                    if (bytes == -1 && errno != ENETDOWN)
                     {
                         logger("sendto error on interface %s: %s\n", peer->name, strerror(errno));
                     }
