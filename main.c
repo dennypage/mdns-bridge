@@ -57,6 +57,10 @@ static const char *             pidfile_name = NULL;
 #define DEFAULT_CONFIG_FILE     "mdns-bridge.conf"
 const char *                    config_filename = DEFAULT_CONFIG_FILE;
 
+// Termination handling
+static volatile sig_atomic_t term_pending = 0;
+static volatile sig_atomic_t term_signum = 0;
+
 
 //
 // Log abnormal events
@@ -109,17 +113,14 @@ void fatal(
 //
 // Termination handler
 //
-__attribute__ ((noreturn))
 static void term_handler(
     int                         signum)
 {
-    // NB: This function may be simultaneously invoked by multiple threads
-    if (pidfile_name)
+    if (term_pending == 0)
     {
-        (void) unlink(pidfile_name);
+        term_pending = 1;
+        term_signum = signum;
     }
-    logger("exiting on signal %d\n", signum);
-    exit(EXIT_SUCCESS);
 }
 
 
@@ -342,7 +343,17 @@ int main(
     start_bridges();
 
     // Wait (forever)
-    pause();
+    while (term_pending == 0)
+    {
+        pause();
+    }
+
+    if (pidfile_name)
+    {
+        (void) unlink(pidfile_name);
+    }
+    logger("exiting on signal %d\n", term_signum);
+    exit(EXIT_SUCCESS);
 
     return 0;
 }
