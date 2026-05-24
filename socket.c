@@ -42,7 +42,7 @@
 
 // Multicast addresses (224.0.0.251 and ff02::fb) in hex
 #define IPV4_HEX_MCAST_ADDRESS  0xe00000fb
-#define IPV6_HEX_MCAST_ADDRESS  {{{ 0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfb }}}
+#define IPV6_HEX_MCAST_ADDRESS  { 0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfb }
 
 // Multicast addresses and port in binary, initialized at runtime in os_initialize_sockets()
 static struct in_addr           ipv4_mcast_addr;
@@ -466,7 +466,9 @@ void os_initialize_sockets(void)
         .s_addr = htonl(IPV4_HEX_MCAST_ADDRESS)
     };
     const struct in6_addr       init_ipv6_mcast_addr =
-        IPV6_HEX_MCAST_ADDRESS;
+    {
+        .s6_addr = IPV6_HEX_MCAST_ADDRESS
+    };
     const struct sockaddr_in    init_ipv4_any_sockaddr =
     {
         .sin_family = AF_INET,
