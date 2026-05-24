@@ -165,7 +165,7 @@ const dns_match_name_t * dns_save_match_name(
         // Ensure we have a valid label
         label_len = strcspn(string + string_offset, ".");
         label_count += 1;
-        if (label_len == 0 || label_len >= DNS_MAX_LABEL_LEN || label_count > MAX_NUM_LABELS)
+        if (label_len == 0 || label_len >= DNS_MAX_LABEL_LEN || label_count >= DNS_MAX_NUM_LABELS)
         {
             fatal("Invalid DNS name \"%s\"\n", string);
         }
@@ -298,7 +298,7 @@ static unsigned int dns_decode_name(
 
         // Track number of labels and limit DoS
         label_count += 1;
-        if (label_count > MAX_NUM_LABELS)
+        if (label_count >= DNS_MAX_NUM_LABELS)
         {
             // Drop the packet
             dns_packet_error(packet, "too many labels in a name");

@@ -38,9 +38,6 @@
 #include "common.h"
 
 
-// DNS limits
-#define MAX_LABEL_LEN               (64)    // Includes leading length byte
-#define MAX_NUM_LABELS              (127)   // Number of labels in a name
 
 // Initial/max query and response counts
 #define INITIAL_QUERY_COUNT         (25)
