@@ -490,7 +490,7 @@ void os_initialize_sockets(void)
     const struct sockaddr_in6   init_ipv6_mcast_sockaddr =
     {
         .sin6_family = AF_INET6,
-        .sin6_addr = IPV6_HEX_MCAST_ADDRESS,
+        .sin6_addr.s6_addr = IPV6_HEX_MCAST_ADDRESS,
         .sin6_port = htons(MCAST_PORT),
     };
 
