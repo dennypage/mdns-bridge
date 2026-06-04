@@ -826,3 +826,25 @@ unsigned int dns_decode_packet(
 
     return (packet_offset);
 }
+
+
+//
+// Report if a source filter acted on the current packet
+//
+unsigned int dns_src_filter_active(
+    dns_state_t *               dns_state)
+{
+    _dns_state_t *              state = (_dns_state_t *) dns_state;
+
+    if (state->query_count != state->recv_query_count ||
+        state->rr_count[RR_ANSWER] != state->recv_rr_count[RR_ANSWER] ||
+        state->rr_count[RR_AUTHORITY] != state->recv_rr_count[RR_AUTHORITY] ||
+        state->rr_count[RR_ADDITIONAL] != state->recv_rr_count[RR_ADDITIONAL])
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}

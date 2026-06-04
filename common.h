@@ -285,9 +285,9 @@ extern unsigned int dns_encode_packet(
     packet_t *                  send_packet,
     const filter_list_t *       send_filter_list);
 
-// Create a new DNS packet with outbound filtering
-extern unsigned int test_dns_packet_decode(
-    const packet_t *            packet);
+// Report if a source filter acted on the current packet
+extern unsigned int dns_src_filter_active(
+    dns_state_t *               dns_state);
 
 
 // The main bridge loops
