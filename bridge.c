@@ -128,7 +128,7 @@ static void receive(
     // Forward the packet to peers that do not have outbound filters
     if (interface->peer_nofilter_count[ip_type])
     {
-        if (global_filter_list || interface->inbound_filter_list)
+        if (filtering_enabled && dns_src_filter_active(local_storage->dns_state))
         {
             r = dns_encode_packet(local_storage->dns_state, &local_storage->recv_packet, &local_storage->send_packet, NULL);
             if (r == 0)
