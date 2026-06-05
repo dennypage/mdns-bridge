@@ -328,6 +328,10 @@ void read_config(void)
                 fatal("%s line %u: Invalid value for %s \"%s\"\n", config_filename, config_lineno,
                       KEY_DISABLE_PACKET_FILTERING, value);
             }
+
+            // Warn that the disable-packet-filtering option is deprecated
+            logger("%s line %u: WARNING: the %s option is deprecated and will be removed in a future version\n",
+                    config_filename, config_lineno, KEY_DISABLE_PACKET_FILTERING);
         }
         else if (strcmp(line, KEY_ALLOW_INBOUND_FILTERS) == 0)
         {

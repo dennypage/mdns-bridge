@@ -133,6 +133,7 @@ configuration file.
   # of this option will completely disable packet decoding. Packets received
   # on an interface will be forwarded directly to neighboring interfaces
   # without any form of validation. Use this option with caution.
+  # WARNING: this option is deprecated and will be removed in a future version.
   disable-packet-filtering = no
 
 ```
@@ -155,7 +156,8 @@ configuration file.
 * `disable-packet-filtering`: If no filters are defined, setting this option
     to `yes` will completely disable packet decoding. Packets received on an
     interface will be forwarded directly to neighboring interfaces without
-    any form of validation. **Use this option with caution**.
+    any form of validation. **WARNING: this option is deprecated and will be
+    removed in a future version.**
 
 ##### Notes:
 * Only one global filter list may be provided. Either an allow list, or a
