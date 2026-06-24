@@ -55,12 +55,6 @@ unsigned int set_interface_list(
 {
     unsigned int                index;
 
-    // If a list was previously defined, return error
-    if (configured_interface_list != NULL)
-    {
-        return 1;
-    }
-
     // Allocate the list
     configured_interface_list = calloc(count, sizeof(interface_t));
     if (configured_interface_list == NULL)
@@ -103,7 +97,7 @@ interface_t * get_interface_by_name(
 
 
 //
-// Build and validate a list of interfaces for an ip type
+// Build and validate the list of interfaces for an ip type
 //
 static void build_interface_list(
     ip_type_t                   ip_type)

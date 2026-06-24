@@ -272,10 +272,14 @@ void read_config(void)
                 fatal("%s line %u: A minimum of 2 interfaces are required\n", config_filename, config_lineno);
             }
 
-            if (set_interface_list(list_array, list_array_count))
+            // Error if an interface list was previously defined
+            if (configured_interface_list)
             {
                 fatal("%s line %u: Only one interface list is allowed\n", config_filename, config_lineno);
             }
+
+            // Set the interface list
+            set_interface_list(list_array, list_array_count);
         }
         else if (strcmp(line, KEY_DISABLE_IPV4) == 0)
         {
