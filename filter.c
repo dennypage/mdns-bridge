@@ -183,55 +183,6 @@ static filter_list_t * filter_list_create(
 
 
 //
-// Destroy a filter list
-//
-static void filter_list_destroy(
-   filter_list_t *              filter_list)
-{
-    unsigned int                index;
-
-    // Free the dns names
-    for (index = 0; index < filter_list->count; index++)
-    {
-        free((void *) filter_list->names[index]);
-    }
-
-    // Free the names array and the list itself
-    free(filter_list->names);
-    free(filter_list);
-}
-
-
-//
-// Compare two filter lists for equality
-//
-static int filter_list_compare(
-   const filter_list_t *        l1,
-   const filter_list_t *        l2)
-{
-    if (l1->allow_deny != l2->allow_deny || l1->count != l2->count)
-    {
-        return 1;
-    }
-
-    for (unsigned int index = 0; index < l1->count; index++)
-    {
-        if (l1->names[index]->length != l2->names[index]->length)
-        {
-            return 1;
-        }
-
-        if (memcmp (l1->names[index]->labels, l2->names[index]->labels, l1->names[index]->length))
-        {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-
-//
 // Set the global filter list
 //
 void set_global_filter_list(
@@ -254,7 +205,6 @@ void set_interface_inbound_filter_list(
     unsigned int                count)
 {
     filter_list_t *             filter_list;
-    unsigned int                index;
 
     // Create the list
     filter_list = filter_list_create(allow_deny, list, count);
@@ -263,7 +213,6 @@ void set_interface_inbound_filter_list(
     if (filter_list == global_filter_list)
     {
         logger("Interface %s inbound filter discarded (duplicate of the global filter)\n", interface->name);
-        filter_list_destroy(filter_list);
         return;
     }
 
