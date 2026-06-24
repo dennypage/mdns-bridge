@@ -174,7 +174,6 @@ void set_global_filter_list(
 {
     // Create the list
     global_filter_list = filter_list_create(allow_deny, list, count);
-    return 0;
 }
 
 
@@ -215,7 +214,6 @@ void set_interface_inbound_filter_list(
 
     // Assign the list to the interface
     interface->inbound_filter_list = filter_list;
-    return 0;
 }
 
 
@@ -255,7 +253,6 @@ void set_interface_outbound_filter_list(
 
     // Assign the list to the interface
     interface->outbound_filter_list = filter_list;
-    return 0;
 }
 
 
