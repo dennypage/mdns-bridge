@@ -172,12 +172,6 @@ unsigned int set_global_filter_list(
     char **                     list,
     unsigned int                count)
 {
-    // If a list was previously defined, return error
-    if (global_filter_list)
-    {
-        return 1;
-    }
-
     // Create the list
     global_filter_list = filter_list_create(allow_deny, list, count);
     return 0;
@@ -195,12 +189,6 @@ unsigned int set_interface_inbound_filter_list(
 {
     filter_list_t *             filter_list;
     unsigned int                index;
-
-    // If a list was previously defined, return error
-    if (interface->inbound_filter_list)
-    {
-        return 1;
-    }
 
     // Create the list
     filter_list = filter_list_create(allow_deny, list, count);
@@ -243,12 +231,6 @@ unsigned int set_interface_outbound_filter_list(
     filter_list_t *             filter_list;
     unsigned int                filter_list_unique = 1;
     unsigned int                index;
-
-    // If a list was previously defined, return error
-    if (interface->outbound_filter_list)
-    {
-        return 1;
-    }
 
     // Create the list
     filter_list = filter_list_create(allow_deny, list, count);

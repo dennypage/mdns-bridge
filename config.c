@@ -340,11 +340,14 @@ void read_config(void)
                 fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
                       KEY_ALLOW_INBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
             }
-            list_array_count = split_comma_list(value, list_array);
-            if (set_global_filter_list(ALLOW, list_array, list_array_count))
+
+            if (global_filter_list)
             {
                 fatal("%s line %u: Only one global filter list is allowed\n", config_filename, config_lineno);
             }
+
+            list_array_count = split_comma_list(value, list_array);
+            set_global_filter_list(ALLOW, list_array, list_array_count);
         }
         else if (strcmp(line, KEY_DENY_INBOUND_FILTERS) == 0)
         {
@@ -353,11 +356,14 @@ void read_config(void)
                 fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
                       KEY_DENY_INBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
             }
-            list_array_count = split_comma_list(value, list_array);
-            if (set_global_filter_list(DENY, list_array, list_array_count))
+
+            if (global_filter_list)
             {
                 fatal("%s line %u: Only one global filter list is allowed\n", config_filename, config_lineno);
             }
+
+            list_array_count = split_comma_list(value, list_array);
+            set_global_filter_list(DENY, list_array, list_array_count);
         }
         else
         {
@@ -475,11 +481,13 @@ void read_config(void)
                           KEY_ALLOW_INBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
                 }
 
-                list_array_count = split_comma_list(value, list_array);
-                if (set_interface_inbound_filter_list(interface, ALLOW, list_array, list_array_count))
+                if (interface->inbound_filter_list)
                 {
                     fatal("%s line %u: Only one inbound filter list per interface is allowed\n", config_filename, config_lineno);
                 }
+
+                list_array_count = split_comma_list(value, list_array);
+                set_interface_inbound_filter_list(interface, ALLOW, list_array, list_array_count);
             }
             else if (strcmp(line, KEY_DENY_INBOUND_FILTERS) == 0)
             {
@@ -489,11 +497,13 @@ void read_config(void)
                           KEY_DENY_INBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
                 }
 
-                list_array_count = split_comma_list(value, list_array);
-                if (set_interface_inbound_filter_list(interface, DENY, list_array, list_array_count))
+                if (interface->inbound_filter_list)
                 {
                     fatal("%s line %u: Only one inbound filter list per interface is allowed\n", config_filename, config_lineno);
                 }
+
+                list_array_count = split_comma_list(value, list_array);
+                set_interface_inbound_filter_list(interface, DENY, list_array, list_array_count);
             }
             else if (strcmp(line, KEY_ALLOW_OUTBOUND_FILTERS) == 0)
             {
@@ -503,11 +513,13 @@ void read_config(void)
                           KEY_ALLOW_OUTBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
                 }
 
-                list_array_count = split_comma_list(value, list_array);
-                if (set_interface_outbound_filter_list(interface, ALLOW, list_array, list_array_count))
+                if (interface->outbound_filter_list)
                 {
                     fatal("%s line %u: Only one outbound filter list per interface is allowed\n", config_filename, config_lineno);
                 }
+
+                list_array_count = split_comma_list(value, list_array);
+                set_interface_outbound_filter_list(interface, ALLOW, list_array, list_array_count);
             }
             else if (strcmp(line, KEY_DENY_OUTBOUND_FILTERS) == 0)
             {
@@ -517,11 +529,13 @@ void read_config(void)
                           KEY_DENY_OUTBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
                 }
 
-                list_array_count = split_comma_list(value, list_array);
-                if (set_interface_outbound_filter_list(interface, DENY, list_array, list_array_count))
+                if (interface->outbound_filter_list)
                 {
                     fatal("%s line %u: Only one outbound filter list per interface is allowed\n", config_filename, config_lineno);
                 }
+
+                list_array_count = split_comma_list(value, list_array);
+                set_interface_outbound_filter_list(interface, DENY, list_array, list_array_count);
             }
             // FIXME put some cool stuff here for peer interface filters...
             else
@@ -552,11 +566,19 @@ static void dump_filter_list(
 
     if (list)
     {
-        printf("  %s (%s):\n", name, list->allow_deny == ALLOW ? "allow" : "deny");
+        printf("  %s (%s): ", name, list->allow_deny == ALLOW ? "allow" : "deny");
         for (index = 0; index < list->count; index++)
         {
             dns_labels_to_string(list->names[index]->labels, list->names[index]->length, string);
-            printf("   %s\n", string);
+            if (index < list->count - 1)
+            {
+                printf("%s, ", string);
+
+            }
+            else
+            {
+                printf("%s\n", string);
+            }
         }
     }
     else
@@ -627,11 +649,11 @@ void dump_config(void)
 
         if (interface->inbound_filter_list)
         {
-            dump_filter_list("inbound filter list", interface->inbound_filter_list);
+            dump_filter_list("inbound filter", interface->inbound_filter_list);
         }
         if (interface->outbound_filter_list)
         {
-            dump_filter_list("outbound filter list", interface->outbound_filter_list);
+            dump_filter_list("outbound filter", interface->outbound_filter_list);
         }
         printf("\n");
     }
