@@ -45,6 +45,10 @@ filter_list_t *                 global_filter_list = NULL;
 // Count of unique outbound filters in use across all interfaces
 unsigned int                    unique_outbound_filter_count = 0;
 
+// Cached filter lists
+static filter_list_t **         filter_list_cache = NULL;
+static unsigned int             filter_list_cache_allocated = 0;
+static unsigned int             filter_list_cache_count = 0;
 
 
 //
@@ -59,6 +63,35 @@ static int qsort_strcmp(
 
 
 //
+// Compare two filter lists for equality
+//
+static int filter_list_compare(
+   const filter_list_t *        l1,
+   const filter_list_t *        l2)
+{
+    if (l1->allow_deny != l2->allow_deny || l1->count != l2->count)
+    {
+        return 1;
+    }
+
+    for (unsigned int index = 0; index < l1->count; index++)
+    {
+        if (l1->names[index]->length != l2->names[index]->length)
+        {
+            return 1;
+        }
+
+        if (memcmp (l1->names[index]->labels, l2->names[index]->labels, l1->names[index]->length))
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+
+//
 // Create a filter list
 //
 static filter_list_t * filter_list_create(
@@ -67,6 +100,7 @@ static filter_list_t * filter_list_create(
     unsigned int                count)
 {
     filter_list_t *             filter_list;
+    unsigned int                cache_index;
     unsigned int                index;
 
     // Sort the array
@@ -111,6 +145,39 @@ static filter_list_t * filter_list_create(
     filter_list->count = count;
     filter_list->allow_deny = allow_deny;
 
+    // If the new filter list is a duplicate, use the previously cached filter
+    for (cache_index = 0; cache_index < filter_list_cache_count; cache_index++)
+    {
+        if (filter_list_compare(filter_list, filter_list_cache[cache_index]) == 0)
+        {
+            // Destroy the new filter
+            for (index = 0; index < filter_list->count; index++)
+            {
+                free((void *) filter_list->names[index]);
+            }
+            free(filter_list->names);
+            free(filter_list);
+
+            // Return the previously cached filter
+            return filter_list_cache[cache_index];
+        }
+    }
+
+    // Do we need to (re)allocate the filter list cache?
+    if (filter_list_cache_count >= filter_list_cache_allocated)
+    {
+        filter_list_cache_allocated += 8;
+
+        filter_list_cache = realloc(filter_list_cache, filter_list_cache_allocated * sizeof(filter_list_t));
+        if (filter_list_cache == NULL)
+        {
+            fatal("Cannot allocate memory: %s\n", strerror(errno));
+        }
+    }
+
+    // Cache the new filter list and return
+    filter_list_cache[filter_list_cache_count] = filter_list;
+    filter_list_cache_count += 1;
     return filter_list;
 }
 
@@ -193,7 +260,7 @@ void set_interface_inbound_filter_list(
     filter_list = filter_list_create(allow_deny, list, count);
 
     // Check if this is a duplicate of the global list
-    if (global_filter_list && filter_list_compare(global_filter_list, filter_list) == 0)
+    if (filter_list == global_filter_list)
     {
         logger("Interface %s inbound filter discarded (duplicate of the global filter)\n", interface->name);
         filter_list_destroy(filter_list);
@@ -233,15 +300,19 @@ void set_interface_outbound_filter_list(
     // Create the list
     filter_list = filter_list_create(allow_deny, list, count);
 
+    // Check if this is a duplicate of the global list
+    if (filter_list == global_filter_list)
+    {
+        logger("Interface %s outbound filter discarded (duplicate of the global filter)\n", interface->name);
+        return;
+    }
+
+    // FIXME the uniqiue check should be done later...
     // Check if this is a duplicate of an already existing interface filter list
     for (index = 0; index < configured_interface_count; index++)
     {
-        if (configured_interface_list[index].outbound_filter_list &&
-            filter_list_compare(configured_interface_list[index].outbound_filter_list, filter_list) == 0)
+        if (filter_list == configured_interface_list[index].outbound_filter_list)
         {
-            // If the new list is a duplicate, adopt the existing list
-            filter_list_destroy(filter_list);
-            filter_list = configured_interface_list[index].outbound_filter_list;
             filter_list_unique = 0;
             break;
         }
