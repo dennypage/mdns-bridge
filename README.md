@@ -118,7 +118,7 @@ configuration file.
 ```
 [global]
   # The list of interfaces (mandatory).
-  interfaces = ix0, igc0
+  interfaces = ix0, igc0, igc1
 
   # Optionally Disable ipv4.
   disable-ipv4 = no
@@ -189,17 +189,21 @@ an interface section are optional.
   # An optional list of filters to allow inbound
   allow-inbound-filters = _ipp, _ipps, _airplay
 
-  # An option list of filters to deny outbound
+  # An optional list of filters to deny outbound
   deny-outbound-filters = _ssh
 
+  # An optional list of filters to allow outbound
+  # for packets from a specific peer
+  peer-allow-outbound-filters = igc0, _ipp, _ipps
+  peer-deny-outbound-filters = igc1, _airplay
 ```
 
 #### The following properties may be defined in interface sections:
 
 * `disable-ipv4`: This allows IPv4 to be disabled for this interface.
-   Valid values are `yes` or `no`. The default is `no`.
+    Valid values are `yes` or `no`. The default is `no`.
 * `disable-ipv6`: This allows IPv6 to be disabled for this interface.
-   Valid values are `yes` or `no`. The default is `no`.
+    Valid values are `yes` or `no`. The default is `no`.
 * `allow-inbound-filters`: If defined, any names that do not match one of
     the filters in the list will be discarded from incoming packets on
     this interface. The default is to allow all names.
@@ -211,20 +215,44 @@ an interface section are optional.
     this interface. The default is to allow all names.
 * `deny-outbound-filters`: If defined, any names that match one of the
     filters in the list will be discarded from outgoing packets on this
-    interfaces. There is no default.
+    interface. There is no default.
+* `peer-allow-outbound-filters`:
+    If defined, this creates an outbound allow filter list for this
+    interface that applies to packets that originate from a specific peer
+    interface. The value of this parameter is a comma separated
+    list with the first element being the name of the peer interface,
+    followed by the list of filters. Any names from the peer interface
+    that do not match one of the filters in the list will be discarded
+    from outgoing packets on this interface.
+* `peer-deny-outbound-filters`: If defined, this creates an outbound
+    deny filter list for this interface that applies to packets that
+    originate from a specific peer interface. The value of
+    this parameter is a comma separated list with the first element
+    being the name of the peer interface, followed by the list of filters.
+    Any names from the peer interface that do not match one of the filters
+    in the list will be discarded from outgoing packets on this interface.
 
 ##### Notes:
 * The parameter to enable or disable IPv4/IPv6 cannot override the global
     setting. I.E. if the global setting is `disable-ipv6 = yes`, an
     interface may not specify `disable-ipv6 = no`.
-* Only one inbound filter list may be provided per interface. Either an
-    allow list, or a deny list, but not both.
-* Only one outbound filter list may be provided per interface. Either an
-    allow list, or a deny list, but not both.
-* Inbound interface filters are applied following the global filters. An
-    inbound interface filter does not override the global filter list.
-* Outbound interface filters are applied prior to sending packets to the
+* Only one inbound filter list may be provided. Either an allow list,
+    or a deny list, but not both.
+* Inbound interface filters are applied following the global filters.
+    An inbound interface filter does not override the global filter list.
+* Only one interface wide outbound filter list may be provided. Either
+    an allow list, or a deny list, but not both.
+* Only one peer specific outbound filter list may be provided per peer
+    interface. Either an allow list, or a deny list, but not both.
+* A peer specific outbound filter list overrides an interface wide
+    outbound filter list for packets that originate from the peer
     interface.
+* If both interface wide and peer specific outbound filter lists are
+    defined, the allow/deny types do not need to match. I.E. a peer
+    specific filter list can be an allow list, with the interface wide
+    filter list being a deny list, or vice versa.
+* Outbound interface filters are applied prior to sending packets to
+    the interface.
 * The default behavior is to allow all names inbound and outbound.
 
 ---

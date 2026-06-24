@@ -77,3 +77,7 @@
 [igc1]
   # Optionally Disable ipv6.
   #disable-ipv6 = yes
+
+# An optional list of filters to allow outbound for packets from a specific peers
+  #peer-allow-outbound-filters = igc0, _ipp, _ipps
+  #peer-deny-outbound-filters = igc1, _airplay
