@@ -167,7 +167,7 @@ static int filter_list_compare(
 //
 // Set the global filter list
 //
-unsigned int set_global_filter_list(
+void set_global_filter_list(
     const filter_allow_deny_t   allow_deny,
     char **                     list,
     unsigned int                count)
@@ -181,7 +181,7 @@ unsigned int set_global_filter_list(
 //
 // Set an interface inbound filter list
 //
-unsigned int set_interface_inbound_filter_list(
+void set_interface_inbound_filter_list(
     interface_t *               interface,
     const filter_allow_deny_t   allow_deny,
     char **                     list,
@@ -198,7 +198,7 @@ unsigned int set_interface_inbound_filter_list(
     {
         logger("Interface %s inbound filter discarded (duplicate of the global filter)\n", interface->name);
         filter_list_destroy(filter_list);
-        return 0;
+        return;
     }
 
     // Check if this is a duplicate of an already existing interface filter list
@@ -222,7 +222,7 @@ unsigned int set_interface_inbound_filter_list(
 //
 // Set an interface outbound filter list
 //
-unsigned int set_interface_outbound_filter_list(
+void set_interface_outbound_filter_list(
     interface_t *               interface,
     const filter_allow_deny_t   allow_deny,
     char **                     list,

@@ -224,20 +224,20 @@ extern void os_initialize_sockets(void);
 
 
 // Set the global filter list
-extern unsigned int set_global_filter_list(
+extern void set_global_filter_list(
     const filter_allow_deny_t   allow_deny,
     char **                     list,
     unsigned int                count);
 
 // Set an interface inbound filter list
-extern unsigned int set_interface_inbound_filter_list(
+extern void set_interface_inbound_filter_list(
     interface_t *               interface,
     filter_allow_deny_t         allow_deny,
     char **                     list,
     unsigned int                count);
 
 // Set an interface outbound filter list
-extern unsigned int set_interface_outbound_filter_list(
+extern void set_interface_outbound_filter_list(
     interface_t *               interface,
     filter_allow_deny_t         allow_deny,
     char **                     list,
