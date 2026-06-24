@@ -216,18 +216,6 @@ void set_interface_inbound_filter_list(
         return;
     }
 
-    // Check if this is a duplicate of an already existing interface filter list
-    for (index = 0; index < configured_interface_count; index++)
-    {
-        if (configured_interface_list[index].inbound_filter_list &&
-            filter_list_compare(configured_interface_list[index].inbound_filter_list, filter_list) == 0)
-        {
-            filter_list_destroy(filter_list);
-            filter_list = configured_interface_list[index].inbound_filter_list;
-            break;
-        }
-    }
-
     // Assign the list to the interface
     interface->inbound_filter_list = filter_list;
 }
