@@ -261,7 +261,7 @@ static void build_interface_dest_lists(
         // Create the the permanent peer filter list array
         interface->dest_filter_count[ip_type] = work_list_used;
         interface->dest_filter_list[ip_type] = malloc(work_list_used * sizeof(dest_filter_list_t *));
-        if (work_list == NULL)
+        if (interface->dest_filter_list[ip_type] == NULL)
         {
             fatal("Cannot allocate memory: %s\n", strerror(errno));
         }
@@ -269,6 +269,8 @@ static void build_interface_dest_lists(
         // Save each peer filter list
         for (index = 0; index < work_list_used; index++)
         {
+            work_list_slot = work_list[index];
+
             // Allocate memory for the peer filter list
             dest_filter_list = malloc(sizeof(dest_filter_list_t) + work_list_slot->peer_count * sizeof(struct interface *));
             if (dest_filter_list == NULL)
@@ -278,7 +280,6 @@ static void build_interface_dest_lists(
             interface->dest_filter_list[ip_type][index] = dest_filter_list;
 
             // Copy the filter and peer list from the work list slot
-            work_list_slot = work_list[index];
             dest_filter_list->filter = work_list_slot->filter;
             dest_filter_list->peer_count = work_list_slot->peer_count;
             for (peer_index = 0; peer_index < work_list_slot->peer_count; peer_index++)
