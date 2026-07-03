@@ -165,7 +165,7 @@ static filter_list_t * filter_list_create(
     {
         filter_list_cache_allocated += 8;
 
-        filter_list_cache = realloc(filter_list_cache, filter_list_cache_allocated * sizeof(filter_list_t));
+        filter_list_cache = realloc(filter_list_cache, filter_list_cache_allocated * sizeof(filter_list_t *));
         if (filter_list_cache == NULL)
         {
             fatal("Cannot allocate memory: %s\n", strerror(errno));
