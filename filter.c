@@ -42,9 +42,6 @@ unsigned int                    filtering_enabled = 1;
 // The global filter list
 filter_list_t *                 global_filter_list = NULL;
 
-// Count of unique outbound filters in use across all interfaces
-unsigned int                    unique_outbound_filter_count = 0;
-
 // Cached filter lists
 static filter_list_t **         filter_list_cache = NULL;
 static unsigned int             filter_list_cache_allocated = 0;
@@ -231,8 +228,6 @@ void set_interface_outbound_filter_list(
     unsigned int                count)
 {
     filter_list_t *             filter_list;
-    unsigned int                filter_list_unique = 1;
-    unsigned int                index;
 
     // Create the list
     filter_list = filter_list_create(allow_deny, list, count);
@@ -244,23 +239,38 @@ void set_interface_outbound_filter_list(
         return;
     }
 
-    // FIXME the uniqiue check should be done later...
-    // Check if this is a duplicate of an already existing interface filter list
-    for (index = 0; index < configured_interface_count; index++)
+    // Assign the list to the interface
+    interface->outbound_filter_list = filter_list;
+}
+
+
+//
+// Set an interface peer outbound filter list
+//
+void set_interface_peer_outbound_filter_list(
+    interface_t *               interface,
+    interface_t *               peer,
+    const filter_allow_deny_t   allow_deny,
+    char **                     list,
+    unsigned int                count)
+{
+    filter_list_t *             filter_list;
+
+    // Allocate the peer outbound filter list if it doesn't exist
+    if (interface->peer_outbound_filter_list == NULL)
     {
-        if (filter_list == configured_interface_list[index].outbound_filter_list)
+        interface->peer_outbound_filter_list = calloc(configured_interface_count, sizeof(filter_list_t *));
+        if (interface->peer_outbound_filter_list == NULL)
         {
-            filter_list_unique = 0;
-            break;
+            fatal("Cannot allocate memory: %s\n", strerror(errno));
         }
     }
 
-    if (filter_list_unique) {
-        unique_outbound_filter_count += 1;
-    }
+    // Create the list
+    filter_list = filter_list_create(allow_deny, list, count);
 
-    // Assign the list to the interface
-    interface->outbound_filter_list = filter_list;
+    // Set the peer outbound filter list
+    interface->peer_outbound_filter_list[peer->index] = filter_list;
 }
 
 

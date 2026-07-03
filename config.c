@@ -56,6 +56,8 @@
 #define KEY_DENY_INBOUND_FILTERS        "deny-inbound-filters"
 #define KEY_ALLOW_OUTBOUND_FILTERS      "allow-outbound-filters"
 #define KEY_DENY_OUTBOUND_FILTERS       "deny-outbound-filters"
+#define KEY_PEER_ALLOW_OUTBOUND_FILTERS "peer-allow-outbound-filters"
+#define KEY_PEER_DENY_OUTBOUND_FILTERS  "peer-deny-outbound-filters"
 
 // Global config flags
 static unsigned int                     global_disable_ipv4 = 0;
@@ -234,6 +236,7 @@ void read_config(void)
     char *                      list_array[MAX_LIST_ARRAY];
     unsigned int                list_array_count;
     interface_t *               interface;
+    interface_t *               peer;
     char *                      line;
     char *                      value;
     unsigned int                index;
@@ -541,7 +544,58 @@ void read_config(void)
                 list_array_count = split_comma_list(value, list_array);
                 set_interface_outbound_filter_list(interface, DENY, list_array, list_array_count);
             }
-            // FIXME put some cool stuff here for peer interface filters...
+            else if (strcmp(line, KEY_PEER_ALLOW_OUTBOUND_FILTERS) == 0)
+            {
+                if (filtering_enabled == 0)
+                {
+                    fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
+                          KEY_PEER_ALLOW_OUTBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
+                }
+
+                list_array_count = split_comma_list(value, list_array);
+                if (list_array_count < 2)
+                {
+                    fatal("%s line %u: missing filter\n", config_filename, config_lineno);
+                }
+
+                peer = get_interface_by_name(list_array[0]);
+                if (peer == NULL)
+                {
+                    fatal("%s line %u: Interface \"%s\" is not in the [global] interfaces list\n", config_filename, config_lineno, list_array[0]);
+                }
+
+                if (interface->peer_outbound_filter_list && interface->peer_outbound_filter_list[peer->index])
+                {
+                    fatal("%s line %u: Only one peer outbound filter list per peer is allowed\n", config_filename, config_lineno);
+                }
+                set_interface_peer_outbound_filter_list(interface, peer, ALLOW, &list_array[1], list_array_count - 1);
+            }
+            else if (strcmp(line, KEY_PEER_DENY_OUTBOUND_FILTERS) == 0)
+            {
+                if (filtering_enabled == 0)
+                {
+                    fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
+                          KEY_PEER_DENY_OUTBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
+                }
+
+                list_array_count = split_comma_list(value, list_array);
+                if (list_array_count < 2)
+                {
+                    fatal("%s line %u: missing filter\n", config_filename, config_lineno);
+                }
+
+                peer = get_interface_by_name(list_array[0]);
+                if (peer == NULL)
+                {
+                    fatal("%s line %u: Interface \"%s\" is not in the [global] interfaces list\n", config_filename, config_lineno, list_array[0]);
+                }
+
+                if (interface->peer_outbound_filter_list && interface->peer_outbound_filter_list[peer->index])
+                {
+                    fatal("%s line %u: Only one peer outbound filter list per peer is allowed\n", config_filename, config_lineno);
+                }
+                set_interface_peer_outbound_filter_list(interface, peer, ALLOW, &list_array[1], list_array_count - 1);
+            }
             else
             {
                 fatal("%s line %u: Unknown interface parameter \"%s\"\n", config_filename, config_lineno, line);
@@ -559,10 +613,31 @@ void read_config(void)
 
 
 //
-// Dump the configuration
+// Dump the configuration for human readability
 //
-static void dump_filter_list(
-    char *                      name,
+static void print_peer_list(
+    char *                      prefix,
+    unsigned int                count,
+    interface_t *               list[])
+{
+    unsigned int                index;
+
+    printf("%s: ", prefix);
+    for (index = 0; index < count; index++)
+    {
+        if (index < count - 1)
+        {
+            printf("%s, ", list[index]->name);
+        }
+        else
+        {
+            printf("%s\n", list[index]->name);
+        }
+    }
+}
+
+static void print_filter_list(
+    char *                      prefix,
     filter_list_t *             list)
 {
     unsigned int                index;
@@ -570,7 +645,7 @@ static void dump_filter_list(
 
     if (list)
     {
-        printf("  %s (%s): ", name, list->allow_deny == ALLOW ? "allow" : "deny");
+        printf("%s: (%s) ", prefix, list->allow_deny == ALLOW ? "allow" : "deny");
         for (index = 0; index < list->count; index++)
         {
             dns_labels_to_string(list->names[index]->labels, list->names[index]->length, string);
@@ -587,19 +662,123 @@ static void dump_filter_list(
     }
     else
     {
-        printf("  %s: (none)\n", name);
+        printf("%s: none\n", prefix);
     }
 }
 
+static void print_interface_ip(
+    interface_t *               interface,
+    ip_type_t                   ip_type)
+{
+    interface_t *               peer;
+    interface_t *               peer2;
+    dest_filter_list_t **            peer_filter_list;
+    dest_filter_list_t *             peer_filter;
+    filter_list_t *             filter_list;
+    unsigned int                peer_filter_index;
+    unsigned int                peer_index;
+    unsigned int                peer2_index;
+    unsigned int                count;
 
-//
-// Dump the configuration
-//
+    if (interface->disable_ip[ip_type] == 0)
+    {
+        printf("  %s configuration:\n", ip_type == IPV4 ? "IPv4" : "IPv6");
+        printf("   address: %s\n", ip_type == IPV4 ? interface->ipv4_addr_str : interface->ipv6_addr_str);
+
+        // Print peer interface list
+        for (peer_index = 0; peer_index < configured_interface_count; peer_index++)
+        {
+            peer = &configured_interface_list[peer_index];
+            if (peer == interface || peer->disable_ip[ip_type])
+            {
+                continue;
+            }
+            break;
+        }
+        printf("   peer interfaces: %s", peer->name);
+        for (peer_index = peer_index + 1; peer_index < configured_interface_count; peer_index++)
+        {
+            peer = &configured_interface_list[peer_index];
+            if (peer == interface || peer->disable_ip[ip_type])
+            {
+                continue;
+            }
+            printf(", %s", peer->name);
+        }
+        printf("\n");
+
+        // Print peer source list
+        count = 1;
+        for (peer_index = 0; peer_index < configured_interface_count; peer_index++)
+        {
+            peer = &configured_interface_list[peer_index];
+            if (peer == interface || peer->disable_ip[ip_type])
+            {
+                continue;
+            }
+
+            filter_list = get_filter_list_for_peer(interface, peer);
+
+            for (peer2_index = 0; peer2_index < peer_index; peer2_index++)
+            {
+                peer2 = &configured_interface_list[peer2_index];
+                if (peer2 == interface || peer2->disable_ip[ip_type])
+                {
+                    continue;
+                }
+
+                // Have we already seen this filter list?
+                if (get_filter_list_for_peer(interface, peer2) == filter_list)
+                {
+                    break;
+                }
+            }
+
+            if (peer2_index >= peer_index)
+            {
+                printf("   source %u:\n", count++);
+                printf("    interfaces: %s", peer->name);
+                for (peer2_index = peer_index + 1; peer2_index < configured_interface_count; peer2_index++)
+                {
+                    peer2 = &configured_interface_list[peer2_index];
+                    if (peer2 == interface || peer2->disable_ip[ip_type])
+                    {
+                        continue;
+                    }
+
+                    if (get_filter_list_for_peer(interface, peer2) == filter_list)
+                    {
+                        printf(", %s", peer2->name);
+                    }
+                }
+                printf("\n");
+                print_filter_list("    filter", filter_list);
+            }
+        }
+
+        // Print peer destination list
+        count = 1;
+        peer_filter_list = interface->dest_filter_list[ip_type];
+        for (peer_filter_index = 0; peer_filter_index < interface->dest_filter_count[ip_type]; peer_filter_index++)
+        {
+            peer_filter = peer_filter_list[peer_filter_index];
+
+            printf("   destination %u:\n", count++);
+            print_peer_list("    interfaces", peer_filter->peer_count, peer_filter->peer_list);
+            print_filter_list("    filter", peer_filter_list[peer_filter_index]->filter);
+        }
+    }
+    else
+    {
+        printf("  %s disabled\n", ip_type == IPV4 ? "IPv4" : "IPv6");
+    }
+}
+
 void dump_config(void)
 {
     interface_t *               interface;
+    unsigned int                interface_index;
     unsigned int                index;
-    unsigned int                peer;
 
     // Global section
     printf("\nGlobal settings:\n");
@@ -613,52 +792,36 @@ void dump_config(void)
     } else {
         printf(" disable ipv6 = false\n");
     }
-    dump_filter_list("global filter", global_filter_list);
+    print_filter_list(" global filter", global_filter_list);
+    printf("\n");
 
-    // Interfaces
-    printf("\nInterface list:\n");
-    for (index = 0; index < configured_interface_count; index++)
+    printf("Interfaces:\n");
+
+    for (interface_index = 0; interface_index < configured_interface_count; interface_index++)
     {
-        interface = &configured_interface_list[index];
-        printf(" %s (%u)\n", interface->name, interface->if_index);
-        if (interface->disable_ip[IPV4] == 0)
+        interface = &configured_interface_list[interface_index];
+        printf(" %s:\n", interface->name);
+
+        // Print interface configuration
+        print_filter_list("  inbound filter", interface->inbound_filter_list);
+        print_filter_list("  outbound filter", interface->outbound_filter_list);
+
+        if (interface->peer_outbound_filter_list)
         {
-            printf("  ipv4 address %s\n", interface->ipv4_addr_str);
-            printf("   peer interfaces:");
-            for (peer = 0; peer < interface->peer_count[IPV4]; peer++)
+            printf("  peer specific outbound filters:\n");
+            for (index = 0; index < configured_interface_count; index++)
             {
-                printf(" %s", interface->peer_list[IPV4][peer]->name);
+                if (interface->peer_outbound_filter_list[index])
+                {
+                    printf("   %s", configured_interface_list[index].name);
+                    print_filter_list("", interface->peer_outbound_filter_list[index]);
+                }
             }
-            printf("\n");
-        }
-        else
-        {
-            printf("  ipv4 disabled\n");
         }
 
-        if (interface->disable_ip[IPV6] == 0)
-        {
-            printf("  ipv6 address %s\n", interface->ipv6_addr_str);
-            printf("   peer interfaces:");
-            for (peer = 0; peer < interface->peer_count[IPV6]; peer++)
-            {
-                printf(" %s", interface->peer_list[IPV6][peer]->name);
-            }
-            printf("\n");
-        }
-        else
-        {
-            printf("  ipv6 disabled\n");
-        }
-
-        if (interface->inbound_filter_list)
-        {
-            dump_filter_list("inbound filter", interface->inbound_filter_list);
-        }
-        if (interface->outbound_filter_list)
-        {
-            dump_filter_list("outbound filter", interface->outbound_filter_list);
-        }
+        // Print interface IP configuration
+        print_interface_ip(interface, IPV4);
+        print_interface_ip(interface, IPV6);
         printf("\n");
     }
 }

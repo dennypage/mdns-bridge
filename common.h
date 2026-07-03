@@ -123,12 +123,23 @@ typedef enum
 } ip_type_t;
 #define NUM_IP_TYPES            2
 
+// Destination filter list structure
+typedef struct dest_filter_list
+{
+    filter_list_t *             filter;
+    unsigned int                peer_count;
+    struct interface *          peer_list[];
+} dest_filter_list_t;
+
 // Interface structure
 typedef struct interface
 {
     const char *                name;
+    unsigned int                index;
+
     filter_list_t *             inbound_filter_list;
     filter_list_t *             outbound_filter_list;
+    filter_list_t **            peer_outbound_filter_list;
 
     unsigned int                if_index;
     unsigned int                disable_ip[NUM_IP_TYPES];
@@ -140,11 +151,8 @@ typedef struct interface
 
     int                         sock[NUM_IP_TYPES];
 
-    struct interface **         peer_list[NUM_IP_TYPES];
-    unsigned int                peer_count[NUM_IP_TYPES];
-    filter_list_t **            peer_filter_list[NUM_IP_TYPES];
-    unsigned int                peer_filter_count[NUM_IP_TYPES];
-    unsigned int                peer_nofilter_count[NUM_IP_TYPES];
+    unsigned int                dest_filter_count[NUM_IP_TYPES];
+    dest_filter_list_t **       dest_filter_list[NUM_IP_TYPES];
 } interface_t;
 
 // DNS state/closure (private to dns decode/encode files)
@@ -172,9 +180,6 @@ extern unsigned int             filtering_enabled;
 
 // Global filter list, defined in filter.c
 extern filter_list_t *          global_filter_list;
-
-// Count of unique outbound filters in use across all interfaces, defined in filter.c
-extern unsigned int             unique_outbound_filter_count;
 
 // Interface lists, defined in interface.c
 extern interface_t *            configured_interface_list;
@@ -213,6 +218,11 @@ extern unsigned int set_interface_list(
 extern interface_t * get_interface_by_name(
     const char *                name);
 
+// Get the outbound filter list an interface uses for a peer
+filter_list_t * get_filter_list_for_peer(
+    interface_t *               interface,
+    interface_t *               peer);
+
 // Set the configured interface list
 extern void set_ip_interface_lists(void);
 
@@ -240,6 +250,14 @@ extern void set_interface_inbound_filter_list(
 extern void set_interface_outbound_filter_list(
     interface_t *               interface,
     filter_allow_deny_t         allow_deny,
+    char **                     list,
+    unsigned int                count);
+
+// Set an interface peer outbound filter list
+void set_interface_peer_outbound_filter_list(
+    interface_t *               interface,
+    interface_t *               peer,
+    const filter_allow_deny_t   allow_deny,
     char **                     list,
     unsigned int                count);
 

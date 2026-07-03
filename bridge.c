@@ -83,7 +83,6 @@ typedef struct
 } thread_local_storage_t;
 
 
-
 //
 // Process an incoming packet
 //
@@ -96,10 +95,11 @@ static void receive(
     ssize_t                     bytes;
     socket_address_t *          dst_addr = &local_storage->dst_addr;
     socklen_t                   dst_addr_len = local_storage->dst_addr_len;
+    dest_filter_list_t **       dest_filter_list;
+    dest_filter_list_t *        dest_filter;
     interface_t *               peer;
+    unsigned int                dest_filter_index;
     unsigned int                peer_index;
-    unsigned int                filter_index;
-    filter_list_t *             filter_list;
     unsigned int                r;
 
     // Receive the packet
@@ -125,73 +125,42 @@ static void receive(
         }
     }
 
-    // Forward the packet to peers that do not have outbound filters
-    if (interface->peer_nofilter_count[ip_type])
+    dest_filter_list = interface->dest_filter_list[ip_type];
+    for (dest_filter_index = 0; dest_filter_index < interface->dest_filter_count[IPV4]; dest_filter_index++)
     {
-        if (filtering_enabled && dns_src_filter_active(local_storage->dns_state))
+        dest_filter = dest_filter_list[dest_filter_index];
+
+        // Does the packet need to be re-encoded?
+        if (filtering_enabled && (dest_filter->filter || dns_src_filter_active(local_storage->dns_state)))
         {
-            r = dns_encode_packet(local_storage->dns_state, &local_storage->recv_packet, &local_storage->send_packet, NULL);
-            if (r == 0)
-            {
-                // If the encoder failed, drop the packet
-                return;
-            }
             packet = &local_storage->send_packet;
-        }
-
-        for (peer_index = 0; peer_index < interface->peer_count[ip_type]; peer_index++)
-        {
-            peer = interface->peer_list[ip_type][peer_index];
-            if (peer->outbound_filter_list == NULL)
-            {
-                if (ip_type == IPV6)
-                {
-                    // Set the destination scope ID
-                    dst_addr->sin6.sin6_scope_id = peer->if_index;
-                }
-
-                bytes = sendto(peer->sock[ip_type], packet->buffer, packet->bytes, 0, &dst_addr->sa, dst_addr_len);
-                if (bytes == -1 && errno != ENETDOWN)
-                {
-                    logger("sendto error on interface %s: %s\n", peer->name, strerror(errno));
-                }
-            }
-        }
-    }
-
-    // Forward the packet to peers that do have outbound filters
-    if (interface->peer_filter_count[ip_type])
-    {
-        packet = &local_storage->send_packet;
-
-        for (filter_index = 0; filter_index < interface->peer_filter_count[ip_type]; filter_index++)
-        {
-            filter_list = interface->peer_filter_list[ip_type][filter_index];
-
-            r = dns_encode_packet(local_storage->dns_state, &local_storage->recv_packet, &local_storage->send_packet, filter_list);
+            r = dns_encode_packet(local_storage->dns_state, &local_storage->recv_packet, packet, dest_filter->filter);
             if (r == 0)
             {
                 // If everything has been filtered, skip the packet
                 continue;
             }
+        }
+        else
+        {
+            packet = &local_storage->recv_packet;
+        }
 
-            for (peer_index = 0; peer_index < interface->peer_count[ip_type]; peer_index++)
+        // Send the packet to each of the peers
+        for (peer_index = 0; peer_index < dest_filter->peer_count; peer_index++)
+        {
+            peer = dest_filter->peer_list[peer_index];
+
+            if (ip_type == IPV6)
             {
-                peer = interface->peer_list[ip_type][peer_index];
-                if (peer->outbound_filter_list == filter_list)
-                {
-                    if (ip_type == IPV6)
-                    {
-                        // Set the destination scope ID
-                        dst_addr->sin6.sin6_scope_id = peer->if_index;
-                    }
+                // Set the destination scope ID
+                dst_addr->sin6.sin6_scope_id = peer->if_index;
+            }
 
-                    bytes = sendto(peer->sock[ip_type], packet->buffer, packet->bytes, 0, &dst_addr->sa, dst_addr_len);
-                    if (bytes == -1 && errno != ENETDOWN)
-                    {
-                        logger("sendto error on interface %s: %s\n", peer->name, strerror(errno));
-                    }
-                }
+            bytes = sendto(peer->sock[ip_type], packet->buffer, packet->bytes, 0, &dst_addr->sa, dst_addr_len);
+            if (bytes == -1 && errno != ENETDOWN)
+            {
+                logger("sendto error on interface %s: %s\n", peer->name, strerror(errno));
             }
         }
     }
