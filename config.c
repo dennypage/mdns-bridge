@@ -594,7 +594,7 @@ void read_config(void)
                 {
                     fatal("%s line %u: Only one peer outbound filter list per peer is allowed\n", config_filename, config_lineno);
                 }
-                set_interface_peer_outbound_filter_list(interface, peer, ALLOW, &list_array[1], list_array_count - 1);
+                set_interface_peer_outbound_filter_list(interface, peer, DENY, &list_array[1], list_array_count - 1);
             }
             else
             {
@@ -672,8 +672,8 @@ static void print_interface_ip(
 {
     interface_t *               peer;
     interface_t *               peer2;
-    dest_filter_list_t **            peer_filter_list;
-    dest_filter_list_t *             peer_filter;
+    dest_filter_list_t **       peer_filter_list;
+    dest_filter_list_t *        peer_filter;
     filter_list_t *             filter_list;
     unsigned int                peer_filter_index;
     unsigned int                peer_index;
