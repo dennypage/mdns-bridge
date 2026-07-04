@@ -643,26 +643,31 @@ static void print_filter_list(
     unsigned int                index;
     unsigned char               string[DNS_MAX_NAME_LEN];
 
-    if (list)
-    {
-        printf("%s: (%s) ", prefix, list->allow_deny == ALLOW ? "allow" : "deny");
-        for (index = 0; index < list->count; index++)
-        {
-            dns_labels_to_string(list->names[index]->labels, list->names[index]->length, string);
-            if (index < list->count - 1)
-            {
-                printf("%s, ", string);
-
-            }
-            else
-            {
-                printf("%s\n", string);
-            }
-        }
-    }
-    else
+    if (list == NULL)
     {
         printf("%s: none\n", prefix);
+        return;
+    }
+
+    if (list->allow_deny == DENY_ALL)
+    {
+        printf("%s: (deny all)\n", prefix);
+        return;
+    }
+
+    printf("%s: (%s) ", prefix, list->allow_deny == ALLOW ? "allow" : "deny");
+    for (index = 0; index < list->count; index++)
+    {
+        dns_labels_to_string(list->names[index]->labels, list->names[index]->length, string);
+        if (index < list->count - 1)
+        {
+            printf("%s, ", string);
+
+        }
+        else
+        {
+            printf("%s\n", string);
+        }
     }
 }
 

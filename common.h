@@ -104,7 +104,8 @@ typedef struct
 typedef enum
 {
     ALLOW                       = 0,
-    DENY                        = 1
+    DENY                        = 1,
+    DENY_ALL                    = 2
 } filter_allow_deny_t;
 
 typedef struct

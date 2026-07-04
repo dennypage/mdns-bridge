@@ -36,6 +36,10 @@
 #include "common.h"
 
 
+// Token used to indicate a DENY_ALL filter
+#define DENY_ALL_TOKEN          "<all>"
+
+
 // Packet filtering enable flag
 unsigned int                    filtering_enabled = 1;
 
@@ -100,10 +104,22 @@ static filter_list_t * filter_list_create(
     unsigned int                cache_index;
     unsigned int                index;
 
-    // Sort the array
-    qsort(list, count, sizeof(list[0]), qsort_strcmp);
+    // Allocate the filter list
+    filter_list = calloc(1, sizeof(filter_list_t));
+    if (filter_list == NULL)
+    {
+        fatal("Cannot allocate memory: %s\n", strerror(errno));
+    }
 
-    // Remove duplicates
+    // Check for a DENY_ALL filter
+    if (allow_deny == DENY && count == 1 && strcmp(list[0], DENY_ALL_TOKEN) == 0)
+    {
+        filter_list->allow_deny = DENY_ALL;
+        return filter_list;
+    }
+
+    // Sort the array and remove duplicates
+    qsort(list, count, sizeof(list[0]), qsort_strcmp);
     for (index = 1; index < count; index++)
     {
         if (strcmp(list[index - 1], list[index]) == 0)
@@ -115,13 +131,6 @@ static filter_list_t * filter_list_create(
             }
             count--;
         }
-    }
-
-    // Allocate the filter list
-    filter_list = calloc(1, sizeof(filter_list_t));
-    if (filter_list == NULL)
-    {
-        fatal("Cannot allocate memory: %s\n", strerror(errno));
     }
 
     // Allocate the name list
@@ -284,6 +293,13 @@ static unsigned int filter_list_allowed(
     unsigned int                index;
     unsigned int                match = 0;
 
+    // Check for a DENY_ALL filter
+    if (filter_list->allow_deny == DENY_ALL)
+    {
+        return 0;
+    }
+
+    // Check for a match in the filter list
     for (index = 0; index < filter_list->count; index++)
     {
         if (dns_subset_match(name, filter_list->names[index]))
