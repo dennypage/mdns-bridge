@@ -126,7 +126,7 @@ static void receive(
     }
 
     dest_filter_list = interface->dest_filter_list[ip_type];
-    for (dest_filter_index = 0; dest_filter_index < interface->dest_filter_count[IPV4]; dest_filter_index++)
+    for (dest_filter_index = 0; dest_filter_index < interface->dest_filter_count[ip_type]; dest_filter_index++)
     {
         dest_filter = dest_filter_list[dest_filter_index];
 
