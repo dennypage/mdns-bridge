@@ -28,6 +28,9 @@
 //
 
 
+#ifndef _SOCKETP_H
+#define _SOCKETP_H 1
+
 #include <sys/socket.h>
 
 
@@ -42,3 +45,5 @@
 #else
 # error One of SO_BINDTODEVICE, IPV6_BOUND_IF or IP_RECVIF is required
 #endif
+
+#endif // _SOCKETP_H
