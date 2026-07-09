@@ -36,6 +36,7 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 #include "common.h"
 #include "socketp.h"
@@ -111,7 +112,7 @@ static void receive(
     unsigned int                r;
 
     // Receive the packet
-    local_storage->recv_msg.msg_namelen = sizeof(local_storage->recv_packet.src_addr);
+    local_storage->recv_msg.msg_namelen = sizeof(packet->src_addr);
     bytes = recvmsg(interface->sock[ip_type], &local_storage->recv_msg, 0);
     if (bytes == -1)
     {
@@ -119,10 +120,7 @@ static void receive(
         return;
     }
     packet->bytes = bytes;
-
-    // Save the source address for the received message
     packet->src_addr_len = local_storage->recv_msg.msg_namelen;
-    memcpy(&packet->src_addr, local_storage->recv_msg.msg_name, packet->src_addr_len);
 
 #if defined(HAVE_IP_RECVIF)
     {
