@@ -55,12 +55,6 @@ unsigned int set_interface_list(
 {
     unsigned int                index;
 
-    // If a list was previously defined, return error
-    if (configured_interface_list != NULL)
-    {
-        return 1;
-    }
-
     // Allocate the list
     configured_interface_list = calloc(count, sizeof(interface_t));
     if (configured_interface_list == NULL)
@@ -76,6 +70,7 @@ unsigned int set_interface_list(
         {
             fatal("Cannot allocate memory: %s\n", strerror(errno));
         }
+        configured_interface_list[index].index = index;
     }
 
     configured_interface_count = count;
@@ -103,7 +98,23 @@ interface_t * get_interface_by_name(
 
 
 //
-// Build and validate a list of interfaces for an ip type
+// Get the outbound filter list an interface uses for a peer
+//
+filter_list_t * get_filter_list_for_peer(
+    interface_t *               interface,
+    interface_t *               peer)
+{
+    if (interface->peer_outbound_filter_list && interface->peer_outbound_filter_list[peer->index])
+    {
+        return interface->peer_outbound_filter_list[peer->index];
+    }
+
+    return interface->outbound_filter_list;
+}
+
+
+//
+// Build and validate the list of interfaces for an ip type
 //
 static void build_interface_list(
     ip_type_t                   ip_type)
@@ -155,37 +166,43 @@ static void build_interface_list(
 
 
 //
-// Set the configured interface list
+// Build the interface peer lists
 //
-static void build_interface_peer_lists(
+static void build_interface_dest_lists(
     ip_type_t                   ip_type)
 {
     interface_t *               interface;
     interface_t *               peer;
-    unsigned int                index;
+    filter_list_t *             filter_list;
+    dest_filter_list_t *        dest_filter_list;
+    dest_filter_list_t **       work_list;
+    dest_filter_list_t *        work_list_slot;
+    unsigned int                work_list_used;
+    unsigned int                interface_index;
     unsigned int                peer_index;
-    unsigned int                filter_index;
+    unsigned int                index;
 
+    // Allocate memory for the work list
+    work_list = malloc(ip_interface_count[ip_type] * sizeof(dest_filter_list_t *));
+    if (work_list == NULL)
+    {
+        fatal("Cannot allocate memory: %s\n", strerror(errno));
+    }
     for (index = 0; index < ip_interface_count[ip_type]; index++)
     {
-        interface = ip_interface_list[ip_type][index];
-
-        // Allocate the peer list
-        interface->peer_list[ip_type] = calloc(ip_interface_count[ip_type] - 1, sizeof(interface_t *));
-        if (interface->peer_list[ip_type] == NULL)
+        work_list[index] = malloc(ip_interface_count[ip_type] * sizeof(dest_filter_list_t));
+        if (work_list[index] == NULL)
         {
             fatal("Cannot allocate memory: %s\n", strerror(errno));
         }
+    }
 
-        // Allocate the peer outbound filter list if used
-        if (unique_outbound_filter_count)
-        {
-            interface->peer_filter_list[ip_type] = calloc(unique_outbound_filter_count, sizeof(filter_list_t *));
-            if (interface->peer_filter_list[ip_type] == NULL)
-            {
-                fatal("Cannot allocate memory: %s\n", strerror(errno));
-            }
-        }
+    for (interface_index = 0; interface_index < ip_interface_count[ip_type]; interface_index++)
+    {
+        interface = ip_interface_list[ip_type][interface_index];
+
+        // Clear the work list
+        work_list_used = 0;
 
         // Process the peers
         for (peer_index = 0; peer_index < ip_interface_count[ip_type]; peer_index++)
@@ -197,35 +214,88 @@ static void build_interface_peer_lists(
                 continue;
             }
 
-            // Add the peer to the list
-            interface->peer_list[ip_type][interface->peer_count[ip_type]] = peer;
-            interface->peer_count[ip_type] += 1;
+            // Get the filter list used by the peer for this interface
+            filter_list = get_filter_list_for_peer(peer, interface);
 
-            // Check if the peer has outbound filtering
-            if (peer->outbound_filter_list)
+            // Is the filter already in the list?
+            for (index = 0; index < work_list_used; index++)
             {
-                // Is the filter already in the list?
-                for (filter_index = 0; filter_index < interface->peer_filter_count[ip_type]; filter_index++)
+                if (work_list[index]->filter == filter_list)
                 {
-                    if (peer->outbound_filter_list == interface->peer_filter_list[ip_type][filter_index])
+                    break;
+                }
+            }
+
+            // Add the filter to the list if it's not already present
+            if (index >= work_list_used)
+            {
+                work_list_slot = work_list[work_list_used];
+                work_list_used++;
+
+                // Add the filter to the list
+                work_list_slot->filter = filter_list;
+                work_list_slot->peer_list[0] = peer;
+                work_list_slot->peer_count = 1;
+
+                // Check for other peers
+                for (index = peer_index + 1; index < ip_interface_count[ip_type]; index++)
+                {
+                    peer = ip_interface_list[ip_type][index];
+                    if (peer == interface)
                     {
-                        break;
+                        // Skip the current interface
+                        continue;
+                    }
+
+                    // Check the filter list used by the peer for this interface
+                    filter_list = get_filter_list_for_peer(peer, interface);
+                    if (filter_list == work_list_slot->filter)
+                    {
+                        work_list_slot->peer_list[work_list_slot->peer_count] = peer;
+                        work_list_slot->peer_count++;
                     }
                 }
-
-                // If the filter is not in the list, add it
-                if (filter_index == interface->peer_filter_count[ip_type])
-                {
-                    interface->peer_filter_list[ip_type][filter_index] = peer->outbound_filter_list;
-                    interface->peer_filter_count[ip_type] += 1;
-                }
-            }
-            else
-            {
-                interface->peer_nofilter_count[ip_type] += 1;
             }
         }
+
+        // Create the the permanent peer filter list array
+        interface->dest_filter_count[ip_type] = work_list_used;
+        interface->dest_filter_list[ip_type] = malloc(work_list_used * sizeof(dest_filter_list_t *));
+        if (interface->dest_filter_list[ip_type] == NULL)
+        {
+            fatal("Cannot allocate memory: %s\n", strerror(errno));
+        }
+
+        // Save each peer filter list
+        for (index = 0; index < work_list_used; index++)
+        {
+            work_list_slot = work_list[index];
+
+            // Allocate memory for the peer filter list
+            dest_filter_list = malloc(sizeof(dest_filter_list_t) + work_list_slot->peer_count * sizeof(struct interface *));
+            if (dest_filter_list == NULL)
+            {
+                fatal("Cannot allocate memory: %s\n", strerror(errno));
+            }
+            interface->dest_filter_list[ip_type][index] = dest_filter_list;
+
+            // Copy the filter and peer list from the work list slot
+            dest_filter_list->filter = work_list_slot->filter;
+            dest_filter_list->peer_count = work_list_slot->peer_count;
+            for (peer_index = 0; peer_index < work_list_slot->peer_count; peer_index++)
+            {
+                dest_filter_list->peer_list[peer_index] = work_list_slot->peer_list[peer_index];
+            }
+
+        }
     }
+
+    // Clean up the work list
+    for (index = 0; index < ip_interface_count[ip_type]; index++)
+    {
+        free(work_list[index]);
+    }
+    free(work_list);
 }
 
 
@@ -253,10 +323,10 @@ void set_ip_interface_lists(void)
     // Build the peer lists for each interface
     if (ip_interface_count[IPV4])
     {
-        build_interface_peer_lists(IPV4);
+        build_interface_dest_lists(IPV4);
     }
     if (ip_interface_count[IPV6])
     {
-        build_interface_peer_lists(IPV6);
+        build_interface_dest_lists(IPV6);
     }
 }

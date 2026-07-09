@@ -36,8 +36,10 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 #include "common.h"
+#include "socketp.h"
 
 
 //
@@ -80,8 +82,14 @@ typedef struct
     // Receive and send packets
     packet_t                    recv_packet;
     packet_t                    send_packet;
-} thread_local_storage_t;
 
+    // Structures for recvmsg
+    struct msghdr               recv_msg;
+    struct iovec                recv_iovec;
+#if defined(HAVE_IP_RECVIF)
+    char                        cmsg_buf[CMSG_SPACE(sizeof(socket_address_t))];
+#endif
+} thread_local_storage_t;
 
 
 //
@@ -96,23 +104,61 @@ static void receive(
     ssize_t                     bytes;
     socket_address_t *          dst_addr = &local_storage->dst_addr;
     socklen_t                   dst_addr_len = local_storage->dst_addr_len;
+    dest_filter_list_t **       dest_filter_list;
+    dest_filter_list_t *        dest_filter;
     interface_t *               peer;
+    unsigned int                dest_filter_index;
     unsigned int                peer_index;
-    unsigned int                filter_index;
-    filter_list_t *             filter_list;
     unsigned int                r;
 
     // Receive the packet
-    packet->src_addr_len = sizeof(packet->src_addr.storage);
-    bytes = recvfrom(interface->sock[ip_type],
-                            packet->buffer, sizeof(packet->buffer), 0,
-                            &packet->src_addr.sa, &packet->src_addr_len);
+    local_storage->recv_msg.msg_namelen = sizeof(packet->src_addr);
+    bytes = recvmsg(interface->sock[ip_type], &local_storage->recv_msg, 0);
     if (bytes == -1)
     {
-        logger("recvfrom error on interface %s: %s\n", interface->name, strerror(errno));
+        logger("recvmsg error on interface %s: %s\n", interface->name, strerror(errno));
         return;
     }
     packet->bytes = bytes;
+    packet->src_addr_len = local_storage->recv_msg.msg_namelen;
+
+#if defined(HAVE_IP_RECVIF)
+    {
+        struct cmsghdr *        cmsg;
+        struct sockaddr_dl *    sa_dl;
+        interface_t *           new_interface = NULL;
+        unsigned int            index;
+
+        for (cmsg = CMSG_FIRSTHDR(&local_storage->recv_msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&local_storage->recv_msg, cmsg))
+        {
+            if (cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_RECVIF)
+            {
+                sa_dl = (struct sockaddr_dl *) CMSG_DATA(cmsg);
+                if (interface->if_index != sa_dl->sdl_index)
+                {
+                    // Look for the correct interface by system interface index
+                    for (index = 0; index < local_storage->interface_count; index++)
+                    {
+                        if (local_storage->interface_list[index]->if_index == sa_dl->sdl_index)
+                        {
+                            new_interface = local_storage->interface_list[index];
+                            break;
+                        }
+                    }
+
+                    // If no interface is found, skip this message
+                    if (new_interface == NULL)
+                    {
+                        return;
+                    }
+
+                    // Assign the correct interface to the packet
+                    interface = new_interface;
+                }
+            }
+        }
+    }
+#endif
 
     // If filter is enabled, decode the packet
     if (filtering_enabled)
@@ -125,73 +171,42 @@ static void receive(
         }
     }
 
-    // Forward the packet to peers that do not have outbound filters
-    if (interface->peer_nofilter_count[ip_type])
+    dest_filter_list = interface->dest_filter_list[ip_type];
+    for (dest_filter_index = 0; dest_filter_index < interface->dest_filter_count[ip_type]; dest_filter_index++)
     {
-        if (filtering_enabled && dns_src_filter_active(local_storage->dns_state))
+        dest_filter = dest_filter_list[dest_filter_index];
+
+        // Does the packet need to be re-encoded?
+        if (filtering_enabled && (dest_filter->filter || dns_src_filter_active(local_storage->dns_state)))
         {
-            r = dns_encode_packet(local_storage->dns_state, &local_storage->recv_packet, &local_storage->send_packet, NULL);
-            if (r == 0)
-            {
-                // If the encoder failed, drop the packet
-                return;
-            }
-            packet = &local_storage->send_packet;
-        }
-
-        for (peer_index = 0; peer_index < interface->peer_count[ip_type]; peer_index++)
-        {
-            peer = interface->peer_list[ip_type][peer_index];
-            if (peer->outbound_filter_list == NULL)
-            {
-                if (ip_type == IPV6)
-                {
-                    // Set the destination scope ID
-                    dst_addr->sin6.sin6_scope_id = peer->if_index;
-                }
-
-                bytes = sendto(peer->sock[ip_type], packet->buffer, packet->bytes, 0, &dst_addr->sa, dst_addr_len);
-                if (bytes == -1 && errno != ENETDOWN)
-                {
-                    logger("sendto error on interface %s: %s\n", peer->name, strerror(errno));
-                }
-            }
-        }
-    }
-
-    // Forward the packet to peers that do have outbound filters
-    if (interface->peer_filter_count[ip_type])
-    {
-        packet = &local_storage->send_packet;
-
-        for (filter_index = 0; filter_index < interface->peer_filter_count[ip_type]; filter_index++)
-        {
-            filter_list = interface->peer_filter_list[ip_type][filter_index];
-
-            r = dns_encode_packet(local_storage->dns_state, &local_storage->recv_packet, &local_storage->send_packet, filter_list);
+            r = dns_encode_packet(local_storage->dns_state, &local_storage->recv_packet, &local_storage->send_packet, dest_filter->filter);
             if (r == 0)
             {
                 // If everything has been filtered, skip the packet
                 continue;
             }
+            packet = &local_storage->send_packet;
+        }
+        else
+        {
+            packet = &local_storage->recv_packet;
+        }
 
-            for (peer_index = 0; peer_index < interface->peer_count[ip_type]; peer_index++)
+        // Send the packet to each of the peers
+        for (peer_index = 0; peer_index < dest_filter->peer_count; peer_index++)
+        {
+            peer = dest_filter->peer_list[peer_index];
+
+            if (ip_type == IPV6)
             {
-                peer = interface->peer_list[ip_type][peer_index];
-                if (peer->outbound_filter_list == filter_list)
-                {
-                    if (ip_type == IPV6)
-                    {
-                        // Set the destination scope ID
-                        dst_addr->sin6.sin6_scope_id = peer->if_index;
-                    }
+                // Set the destination scope ID
+                dst_addr->sin6.sin6_scope_id = peer->if_index;
+            }
 
-                    bytes = sendto(peer->sock[ip_type], packet->buffer, packet->bytes, 0, &dst_addr->sa, dst_addr_len);
-                    if (bytes == -1 && errno != ENETDOWN)
-                    {
-                        logger("sendto error on interface %s: %s\n", peer->name, strerror(errno));
-                    }
-                }
+            bytes = sendto(peer->sock[ip_type], packet->buffer, packet->bytes, 0, &dst_addr->sa, dst_addr_len);
+            if (bytes == -1 && errno != ENETDOWN)
+            {
+                logger("sendto error on interface %s: %s\n", peer->name, strerror(errno));
             }
         }
     }
@@ -333,6 +348,18 @@ static thread_local_storage_t * local_storage_create(
     {
         fatal("Cannot allocate memory: %s\n", strerror(errno));
     }
+
+    // Initialize recvmsg structures
+    local_storage->recv_msg.msg_name = &local_storage->recv_packet.src_addr;
+    local_storage->recv_msg.msg_namelen = sizeof(local_storage->recv_packet.src_addr);
+    local_storage->recv_msg.msg_iov = &local_storage->recv_iovec;
+    local_storage->recv_msg.msg_iovlen = 1;
+    local_storage->recv_iovec.iov_base = local_storage->recv_packet.buffer;
+    local_storage->recv_iovec.iov_len = sizeof(local_storage->recv_packet.buffer);
+#if defined(HAVE_IP_RECVIF)
+    local_storage->recv_msg.msg_control = local_storage->cmsg_buf;
+    local_storage->recv_msg.msg_controllen = sizeof(local_storage->cmsg_buf);
+#endif
 
     // DNS state for the thread
     local_storage->dns_state = dns_state_create();

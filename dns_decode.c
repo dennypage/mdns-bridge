@@ -428,7 +428,7 @@ static unsigned int dns_decode_header(
         if (np == NULL)
         {
             // Drop the packet
-            logger("Cannot allocate memory: %s\n", strerror(errno));
+            logger("Cannot allocate memory to expand query list: %s\n", strerror(errno));
             return 0;
         }
         state->query_list = np;
@@ -454,7 +454,7 @@ static unsigned int dns_decode_header(
         if (np == NULL)
         {
             // Drop the packet
-            logger("Cannot allocate memory: %s\n", strerror(errno));
+            logger("Cannot allocate memory to expand resource record list: %s\n", strerror(errno));
             return 0;
         }
         state->rr_list = np;
