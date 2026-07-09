@@ -253,6 +253,12 @@ an interface section are optional.
     filter list being a deny list, or vice versa.
 * Outbound interface filters are applied prior to sending packets to
     the interface.
+* There is a special filter list called the "deny all" filter list, which
+    matches and block all services. The format of the deny all filter
+    is a list with a single element, "`<all>`". This filter list may only
+    be specified as a parameter to a deny property (`deny-inbound-filters`,
+    `deny-outbound-filters`, `peer-deny-outbound-filters`).
+
 * The default behavior is to allow all names inbound and outbound.
 
 ---

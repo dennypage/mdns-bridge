@@ -74,10 +74,19 @@
   # Optionally Disable ipv6.
   #disable-ipv6 = no
 
+  # An optional filter list to deny all inbound packets from this interface
+  #deny-inbound-filters = <all>
+
+  # An optional filter list to deny all outbound packets on this interface
+  #deny-outbound-filters = <all>
+
 [igc1]
   # Optionally Disable ipv6.
   #disable-ipv6 = yes
 
-# An optional list of filters to allow outbound for packets from a specific peers
-  #peer-allow-outbound-filters = igc0, _ipp, _ipps
-  #peer-deny-outbound-filters = igc1, _airplay
+  # An optional list of filters to allow or deny outbound for packets from specific peers
+  #peer-allow-outbound-filters = ix0, _ipp, _ipps
+  #peer-deny-outbound-filters = igc0, _airplay
+
+  # An optional filter list to deny all packets from another interface
+  #peer-deny-outbound-filters = ix0, <all>
