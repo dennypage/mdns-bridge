@@ -411,6 +411,7 @@ static void os_bind_ipv6socket(
         fatal("setsockopt (IPV6_BOUND_IF) for IPv6 on %s failed: %s\n", interface->name, strerror(errno));
     }
 #elif defined(HAVE_IP_RECVIF)
+    // NB: Yes, it's supposed to be IP_RECVIF, not IPV6_RECVIF
     r = setsockopt(sock, IPPROTO_IPV6, IP_RECVIF, &interface->if_index, sizeof(interface->if_index));
     if (r == -1)
     {
