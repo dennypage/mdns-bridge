@@ -334,6 +334,10 @@ static unsigned int dns_encode_name(
 
     // Copy the labels to the packet
     copy_len = name->offset[name_index] + label[0] + 1;
+    if (packet_offset + copy_len > MDNS_MAX_PACKET_SIZE)
+    {
+        return 0;
+    }
     memcpy(send_packet->buffer + packet_offset, name->labels, copy_len);
 
     // Set the pointer for the current label
