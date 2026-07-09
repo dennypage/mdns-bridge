@@ -262,9 +262,13 @@ static void * bridge_thread(
     while (1)
     {
         num_events = epoll_wait(event_fd, events, ip_interface_count[ip_type], -1);
-        if (num_events < 0 && errno != EINTR)
+        if (num_events < 0)
         {
-            logger("epoll_wait: %s\n", strerror(errno));
+            if (errno != EINTR)
+            {
+                logger("epoll_wait: %s\n", strerror(errno));
+            }
+            continue;
         }
 
         for (index = 0; index < (unsigned int) num_events; index++)
@@ -320,9 +324,13 @@ static void * bridge_thread(
     while (1)
     {
         num_events = kevent(event_fd, NULL, 0, events, ip_interface_count[ip_type], NULL);
-        if (num_events < 0 && errno != EINTR)
+        if (num_events < 0)
         {
-            logger("kevent: %s\n", strerror(errno));
+            if (errno != EINTR)
+            {
+                logger("kevent: %s\n", strerror(errno));
+            }
+            continue;
         }
 
         for (index = 0; index < (unsigned int) num_events; index++)
@@ -410,7 +418,7 @@ void start_bridges(void)
         // Create the thread local storage
         local_storage = local_storage_create(IPV4);
 
-        // The the interface list and count
+        // Set the interface list and count
         local_storage->interface_list = ip_interface_list[IPV4];
         local_storage->interface_count = ip_interface_count[IPV4];
 
@@ -428,7 +436,7 @@ void start_bridges(void)
         // Create the thread local storage
         local_storage = local_storage_create(IPV6);
 
-        // The the interface list and count
+        // Set the interface list and count
         local_storage->interface_list = ip_interface_list[IPV6];
         local_storage->interface_count = ip_interface_count[IPV6];
 
