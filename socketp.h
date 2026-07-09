@@ -37,13 +37,13 @@
 // Method to set or determine the inbound interface
 #if defined(SO_BINDTODEVICE)
 # define HAVE_SO_BINDTODEVICE
-#elif defined(IPV6_BOUND_IF)
-# define HAVE_IPV6_BOUND_IF
+#elif defined(IP_BOUND_IF)
+# define HAVE_IP_BOUND_IF
 #elif defined(IP_RECVIF)
 # define HAVE_IP_RECVIF
 # include <net/if_dl.h>
 #else
-# error One of SO_BINDTODEVICE, IPV6_BOUND_IF or IP_RECVIF is required
+# error One of SO_BINDTODEVICE, IP_BOUND_IF or IP_RECVIF is required
 #endif
 
 #endif // _SOCKETP_H

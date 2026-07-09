@@ -404,7 +404,7 @@ static void os_bind_ipv6socket(
     {
         fatal("setsockopt (SO_BINDTODEVICE) for IPv6 on %s failed: %s\n", interface->name, strerror(errno));
     }
-#elif defined(HAVE_IPV6_BOUND_IF)
+#elif defined(HAVE_IP_BOUND_IF)
     r = setsockopt(sock, IPPROTO_IPV6, IPV6_BOUND_IF, &interface->if_index, sizeof(interface->if_index));
     if (r == -1)
     {
