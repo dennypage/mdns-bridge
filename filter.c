@@ -198,6 +198,11 @@ void set_global_filter_list(
 {
     // Create the list
     global_filter_list = filter_list_create(allow_deny, list, count);
+
+    if (global_filter_list->allow_deny == DENY_ALL)
+    {
+        fatal("The global filter list cannot be deny all\n");
+    }
 }
 
 
