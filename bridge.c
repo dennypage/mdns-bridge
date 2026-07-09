@@ -38,6 +38,7 @@
 #include <arpa/inet.h>
 
 #include "common.h"
+#include "socketp.h"
 
 
 //
@@ -80,6 +81,13 @@ typedef struct
     // Receive and send packets
     packet_t                    recv_packet;
     packet_t                    send_packet;
+
+    // Structures for recvmsg
+    struct msghdr               recv_msg;
+    struct iovec                recv_iovec;
+#if defined(HAVE_IP_RECVIF)
+    char                        cmsg_buf[CMSG_SPACE(sizeof(socket_address_t))];
+#endif
 } thread_local_storage_t;
 
 
@@ -103,16 +111,56 @@ static void receive(
     unsigned int                r;
 
     // Receive the packet
-    packet->src_addr_len = sizeof(packet->src_addr.storage);
-    bytes = recvfrom(interface->sock[ip_type],
-                            packet->buffer, sizeof(packet->buffer), 0,
-                            &packet->src_addr.sa, &packet->src_addr_len);
+    local_storage->recv_msg.msg_namelen = sizeof(local_storage->recv_packet.src_addr);
+    bytes = recvmsg(interface->sock[ip_type], &local_storage->recv_msg, 0);
     if (bytes == -1)
     {
-        logger("recvfrom error on interface %s: %s\n", interface->name, strerror(errno));
+        logger("recvmsg error on interface %s: %s\n", interface->name, strerror(errno));
         return;
     }
     packet->bytes = bytes;
+
+    // Save the source address for the received message
+    packet->src_addr_len = local_storage->recv_msg.msg_namelen;
+    memcpy(&packet->src_addr, local_storage->recv_msg.msg_name, packet->src_addr_len);
+
+#if defined(HAVE_IP_RECVIF)
+    {
+        struct cmsghdr *        cmsg;
+        struct sockaddr_dl *    sa_dl;
+        interface_t *           new_interface = NULL;
+        unsigned int            index;
+
+        for (cmsg = CMSG_FIRSTHDR(&local_storage->recv_msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&local_storage->recv_msg, cmsg))
+        {
+            if (cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_RECVIF)
+            {
+                sa_dl = (struct sockaddr_dl *) CMSG_DATA(cmsg);
+                if (interface->if_index != sa_dl->sdl_index)
+                {
+                    // Look for the correct interface by system interface index
+                    for (index = 0; index < local_storage->interface_count; index++)
+                    {
+                        if (local_storage->interface_list[index]->if_index == sa_dl->sdl_index)
+                        {
+                            new_interface = local_storage->interface_list[index];
+                            break;
+                        }
+                    }
+
+                    // If no interface is found, skip this message
+                    if (new_interface == NULL)
+                    {
+                        return;
+                    }
+
+                    // Assign the correct interface to the packet
+                    interface = new_interface;
+                }
+            }
+        }
+    }
+#endif
 
     // If filter is enabled, decode the packet
     if (filtering_enabled)
@@ -133,13 +181,13 @@ static void receive(
         // Does the packet need to be re-encoded?
         if (filtering_enabled && (dest_filter->filter || dns_src_filter_active(local_storage->dns_state)))
         {
-            packet = &local_storage->send_packet;
-            r = dns_encode_packet(local_storage->dns_state, &local_storage->recv_packet, packet, dest_filter->filter);
+            r = dns_encode_packet(local_storage->dns_state, &local_storage->recv_packet, &local_storage->send_packet, dest_filter->filter);
             if (r == 0)
             {
                 // If everything has been filtered, skip the packet
                 continue;
             }
+            packet = &local_storage->send_packet;
         }
         else
         {
@@ -302,6 +350,18 @@ static thread_local_storage_t * local_storage_create(
     {
         fatal("Cannot allocate memory: %s\n", strerror(errno));
     }
+
+    // Initialize recvmsg structures
+    local_storage->recv_msg.msg_name = &local_storage->recv_packet.src_addr;
+    local_storage->recv_msg.msg_namelen = sizeof(local_storage->recv_packet.src_addr);
+    local_storage->recv_msg.msg_iov = &local_storage->recv_iovec;
+    local_storage->recv_msg.msg_iovlen = 1;
+    local_storage->recv_iovec.iov_base = local_storage->recv_packet.buffer;
+    local_storage->recv_iovec.iov_len = sizeof(local_storage->recv_packet.buffer);
+#if defined(HAVE_IP_RECVIF)
+    local_storage->recv_msg.msg_control = local_storage->cmsg_buf;
+    local_storage->recv_msg.msg_controllen = sizeof(local_storage->cmsg_buf);
+#endif
 
     // DNS state for the thread
     local_storage->dns_state = dns_state_create();
