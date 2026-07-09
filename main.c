@@ -167,7 +167,7 @@ static void parse_args(
             exit(EXIT_FAILURE);
         }
     }
- }
+}
 
 
 //
