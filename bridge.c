@@ -87,7 +87,7 @@ typedef struct
     struct msghdr               recv_msg;
     struct iovec                recv_iovec;
 #if defined(HAVE_IP_RECVIF)
-    char                        cmsg_buf[CMSG_SPACE(sizeof(socket_address_t))];
+    char                        cmsg_buf[CMSG_SPACE(sizeof(struct sockaddr_dl))];
 #endif
 } thread_local_storage_t;
 
