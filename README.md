@@ -128,14 +128,6 @@ configuration file.
 
   # An optional list of filters to globally allow
   allow-inbound-filters = _ipp, _ipps, _airplay
-
-  # Optionally disable all packet filtering. If no filters are defined, use
-  # of this option will completely disable packet decoding. Packets received
-  # on an interface will be forwarded directly to neighboring interfaces
-  # without any form of validation. Use this option with caution.
-  # WARNING: this option is deprecated and will be removed in a future version.
-  disable-packet-filtering = no
-
 ```
 
 #### The following properties may be defined in the global section:
@@ -153,11 +145,6 @@ configuration file.
 * `deny-inbound-filters`: If defined, any names that match one of the
     filters in the list will be discarded from incoming packets on all
     interfaces. There is no default.
-* `disable-packet-filtering`: If no filters are defined, setting this option
-    to `yes` will completely disable packet decoding. Packets received on an
-    interface will be forwarded directly to neighboring interfaces without
-    any form of validation. **WARNING: this option is deprecated and will be
-    removed in a future version.**
 
 ##### Notes:
 * Only one global filter list may be provided. Either an allow list, or a
@@ -166,8 +153,6 @@ configuration file.
     any interface, prior to processing interface specific filters. Interface
     specific filters do not override the global filter.
 * The default behavior is to allow all names.
-* `disable-packet-filtering = yes` may not be combined filters of any kind,
-    either in the global section or in interface sections.
 
 ---
 

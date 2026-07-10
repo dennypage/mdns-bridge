@@ -160,15 +160,12 @@ static void receive(
     }
 #endif
 
-    // If filter is enabled, decode the packet
-    if (filtering_enabled)
+    // Decode the packet
+    r = dns_decode_packet(local_storage->dns_state, packet, interface);
+    if (r == 0)
     {
-        r = dns_decode_packet(local_storage->dns_state, packet, interface);
-        if (r == 0)
-        {
-            // If the decoder found a problem with the packet, or everything has been filtered, drop the packet
-            return;
-        }
+        // If the decoder found a problem with the packet, or everything has been filtered, drop the packet
+        return;
     }
 
     dest_filter_list = interface->dest_filter_list[ip_type];
@@ -177,7 +174,7 @@ static void receive(
         dest_filter = dest_filter_list[dest_filter_index];
 
         // Does the packet need to be re-encoded?
-        if (filtering_enabled && (dest_filter->filter || dns_src_filter_active(local_storage->dns_state)))
+        if (dest_filter->filter || dns_src_filter_active(local_storage->dns_state))
         {
             r = dns_encode_packet(local_storage->dns_state, &local_storage->recv_packet, &local_storage->send_packet, dest_filter->filter);
             if (r == 0)

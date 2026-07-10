@@ -316,38 +316,12 @@ void read_config(void)
         }
         else if (strcmp(line, KEY_DISABLE_PACKET_FILTERING) == 0)
         {
-            if (strcmp(value, "yes") == 0)
-            {
-                if (global_filter_list)
-                {
-                    fatal("%s line %u: %s cannot be combined with %s or %s\n", config_filename, config_lineno,
-                          KEY_DISABLE_PACKET_FILTERING, KEY_ALLOW_INBOUND_FILTERS, KEY_DENY_INBOUND_FILTERS);
-                }
-
-                filtering_enabled = 0;
-            }
-            else if (strcmp(value, "no") == 0)
-            {
-                filtering_enabled = 1;
-            }
-            else
-            {
-                fatal("%s line %u: Invalid value for %s \"%s\"\n", config_filename, config_lineno,
-                      KEY_DISABLE_PACKET_FILTERING, value);
-            }
-
-            // Warn that the disable-packet-filtering option is deprecated
-            logger("%s line %u: WARNING: the %s option is deprecated and will be removed in a future version\n",
+            // Warn for disable-packet-filtering
+            logger("%s line %u: WARNING: the %s option is obsolete and has been ignored\n",
                     config_filename, config_lineno, KEY_DISABLE_PACKET_FILTERING);
         }
         else if (strcmp(line, KEY_ALLOW_INBOUND_FILTERS) == 0)
         {
-            if (filtering_enabled == 0)
-            {
-                fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
-                      KEY_ALLOW_INBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
-            }
-
             if (global_filter_list)
             {
                 fatal("%s line %u: Only one global filter list is allowed\n", config_filename, config_lineno);
@@ -358,12 +332,6 @@ void read_config(void)
         }
         else if (strcmp(line, KEY_DENY_INBOUND_FILTERS) == 0)
         {
-            if (filtering_enabled == 0)
-            {
-                fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
-                      KEY_DENY_INBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
-            }
-
             if (global_filter_list)
             {
                 fatal("%s line %u: Only one global filter list is allowed\n", config_filename, config_lineno);
@@ -482,12 +450,6 @@ void read_config(void)
             }
             else if (strcmp(line, KEY_ALLOW_INBOUND_FILTERS) == 0)
             {
-                if (filtering_enabled == 0)
-                {
-                    fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
-                          KEY_ALLOW_INBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
-                }
-
                 if (interface->inbound_filter_list)
                 {
                     fatal("%s line %u: Only one inbound filter list per interface is allowed\n", config_filename, config_lineno);
@@ -498,12 +460,6 @@ void read_config(void)
             }
             else if (strcmp(line, KEY_DENY_INBOUND_FILTERS) == 0)
             {
-                if (filtering_enabled == 0)
-                {
-                    fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
-                          KEY_DENY_INBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
-                }
-
                 if (interface->inbound_filter_list)
                 {
                     fatal("%s line %u: Only one inbound filter list per interface is allowed\n", config_filename, config_lineno);
@@ -514,12 +470,6 @@ void read_config(void)
             }
             else if (strcmp(line, KEY_ALLOW_OUTBOUND_FILTERS) == 0)
             {
-                if (filtering_enabled == 0)
-                {
-                    fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
-                          KEY_ALLOW_OUTBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
-                }
-
                 if (interface->outbound_filter_list)
                 {
                     fatal("%s line %u: Only one outbound filter list per interface is allowed\n", config_filename, config_lineno);
@@ -530,12 +480,6 @@ void read_config(void)
             }
             else if (strcmp(line, KEY_DENY_OUTBOUND_FILTERS) == 0)
             {
-                if (filtering_enabled == 0)
-                {
-                    fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
-                          KEY_DENY_OUTBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
-                }
-
                 if (interface->outbound_filter_list)
                 {
                     fatal("%s line %u: Only one outbound filter list per interface is allowed\n", config_filename, config_lineno);
@@ -546,12 +490,6 @@ void read_config(void)
             }
             else if (strcmp(line, KEY_PEER_ALLOW_OUTBOUND_FILTERS) == 0)
             {
-                if (filtering_enabled == 0)
-                {
-                    fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
-                          KEY_PEER_ALLOW_OUTBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
-                }
-
                 list_array_count = split_comma_list(value, list_array);
                 if (list_array_count < 2)
                 {
@@ -572,12 +510,6 @@ void read_config(void)
             }
             else if (strcmp(line, KEY_PEER_DENY_OUTBOUND_FILTERS) == 0)
             {
-                if (filtering_enabled == 0)
-                {
-                    fatal("%s line %u: %s cannot be combined with %s\n", config_filename, config_lineno,
-                          KEY_PEER_DENY_OUTBOUND_FILTERS, KEY_DISABLE_PACKET_FILTERING);
-                }
-
                 list_array_count = split_comma_list(value, list_array);
                 if (list_array_count < 2)
                 {

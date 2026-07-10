@@ -176,9 +176,6 @@ extern struct sockaddr_in       ipv4_mcast_sockaddr;
 extern struct sockaddr_in6      ipv6_any_sockaddr;
 extern struct sockaddr_in6      ipv6_mcast_sockaddr;
 
-// Packet filtering enable flag, defined in filter.c
-extern unsigned int             filtering_enabled;
-
 // Global filter list, defined in filter.c
 extern filter_list_t *          global_filter_list;
 

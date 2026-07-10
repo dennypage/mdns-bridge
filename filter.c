@@ -40,9 +40,6 @@
 #define DENY_ALL_TOKEN          "<all>"
 
 
-// Packet filtering enable flag
-unsigned int                    filtering_enabled = 1;
-
 // The global filter list
 filter_list_t *                 global_filter_list = NULL;
 
