@@ -450,6 +450,7 @@ static void os_bind_ipv6socket(
     }
 
     // Join the multicast group
+    memset(&mreq6, 0, sizeof(mreq6));
     mreq6.ipv6mr_interface = interface->if_index;
     mreq6.ipv6mr_multiaddr = ipv6_mcast_addr;
     r = setsockopt(sock, IPPROTO_IPV6, IPV6_JOIN_GROUP, &mreq6, sizeof(mreq6));
