@@ -287,20 +287,20 @@ static void os_bind_ipv4socket(
     }
 
     // Set interface specific binding if available
-#if defined(HAVE_SO_BINDTODEVICE)
+#if defined(USE_BINDTODEVICE)
     r = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, interface->name, strlen(interface->name) + 1);
     if (r == -1)
     {
         fatal("setsockopt (SO_BINDTODEVICE) for IPv4 on %s failed: %s\n", interface->name, strerror(errno));
     }
-#elif defined(HAVE_IP_BOUND_IF)
+#elif defined(USE_BOUND_IF)
     r = setsockopt(sock, IPPROTO_IP, IP_BOUND_IF, &interface->if_index, sizeof(interface->if_index));
     if (r == -1)
     {
         fatal("setsockopt (IP_BOUND_IF) for IPv4 on %s failed: %s\n", interface->name, strerror(errno));
     }
-#elif defined(HAVE_IP_RECVIF)
-    r = setsockopt(sock, IPPROTO_IP, IP_RECVIF, &interface->if_index, sizeof(interface->if_index));
+#elif defined(USE_RECVIF_PKTINFO)
+    r = setsockopt(sock, IPPROTO_IP, IP_RECVIF, (void *)&on, sizeof(on));
     if (r == -1)
     {
         fatal("setsockopt (IP_RECVIF) for IPv4 on %s failed: %s\n", interface->name, strerror(errno));
@@ -398,24 +398,23 @@ static void os_bind_ipv6socket(
     }
 
     // Set interface specific binding if available
-#if defined(HAVE_SO_BINDTODEVICE)
+#if defined(USE_BINDTODEVICE)
     r = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, interface->name, strlen(interface->name) + 1);
     if (r == -1)
     {
         fatal("setsockopt (SO_BINDTODEVICE) for IPv6 on %s failed: %s\n", interface->name, strerror(errno));
     }
-#elif defined(HAVE_IP_BOUND_IF)
+#elif defined(USE_BOUND_IF)
     r = setsockopt(sock, IPPROTO_IPV6, IPV6_BOUND_IF, &interface->if_index, sizeof(interface->if_index));
     if (r == -1)
     {
         fatal("setsockopt (IPV6_BOUND_IF) for IPv6 on %s failed: %s\n", interface->name, strerror(errno));
     }
-#elif defined(HAVE_IP_RECVIF)
-    // NB: Yes, it's supposed to be IP_RECVIF, not IPV6_RECVIF
-    r = setsockopt(sock, IPPROTO_IPV6, IP_RECVIF, &interface->if_index, sizeof(interface->if_index));
+#elif defined(USE_RECVIF_PKTINFO)
+    r = setsockopt(sock, IPPROTO_IPV6, IPV6_RECVPKTINFO, (void *)&on, sizeof(on));
     if (r == -1)
     {
-        fatal("setsockopt (IP_RECVIF) for IPv6 on %s failed: %s\n", interface->name, strerror(errno));
+        fatal("setsockopt (IPV6_RECVPKTINFO) for IPv6 on %s failed: %s\n", interface->name, strerror(errno));
     }
 #else
 #  error Missing method to set or determine the inbound interface
