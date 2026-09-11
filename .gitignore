@@ -1,3 +1,4 @@
 *.o
+*.plist
 mdns-bridge
 mdns-bridge.conf
