@@ -113,6 +113,9 @@ static void receive(
 
     // Receive the packet
     local_storage->recv_msg.msg_namelen = sizeof(packet->src_addr);
+#if defined(USE_RECVIF_PKTINFO)
+    local_storage->recv_msg.msg_controllen = sizeof(local_storage->cmsg_buf);
+#endif
     bytes = recvmsg(interface->sock[ip_type], &local_storage->recv_msg, 0);
     if (bytes == -1)
     {
