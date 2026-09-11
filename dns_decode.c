@@ -725,7 +725,7 @@ static unsigned int dns_decode_rrs(
                 case DNS_TYPE_NSEC:
                     // This type has a domain name followed by variable length secondary data
                     tmp_offset = dns_decode_name(packet, packet_offset, &rr->rdata_name);
-                    if (tmp_offset > packet_offset + data_len)
+                    if (tmp_offset == 0 || tmp_offset > packet_offset + data_len)
                     {
                         // Drop the packet
                         dns_packet_error(packet, "rdata nsec data name corruption in %s record", rr_section_name[section_type]);
