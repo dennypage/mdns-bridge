@@ -512,6 +512,7 @@ static unsigned int dns_decode_queries(
             // These query types are filtered on the owner domain name
             case DNS_TYPE_SRV:
             case DNS_TYPE_TXT:
+            case DNS_TYPE_HINFO:
             case DNS_TYPE_SVCB:
             case DNS_TYPE_HTTPS:
             case DNS_TYPE_ANY:

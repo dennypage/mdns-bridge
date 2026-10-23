@@ -1,5 +1,5 @@
-#CC=clang
-#CFLAGS=-Wall -Wextra -g -O2
+CC=clang
+CFLAGS=-Wall -Wextra -Wpedantic -Wno-gnu-pointer-arith -Wno-flexible-array-extensions -g -O2
 
 all: mdns-bridge
 
