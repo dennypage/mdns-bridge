@@ -267,7 +267,7 @@ The following mDNS types are supported by mdns-bridge:
 | NSEC    |  47  | Nonexistence indicator    | Not filtered                     |
 | SVCB    |  64  | Service binding           | Owner domain name                |
 | HTTPS   |  65  | Service binding (https)   | Owner domain name                |
-| ANY     | 255  | All record types request  | Not filtered                     |
+| ANY     | 255  | All record types request  | Owner domain name                |
 
 <sup>*</sup> A and AAAA records are not filtered by name, but link local addresses are never forwarded.
 
